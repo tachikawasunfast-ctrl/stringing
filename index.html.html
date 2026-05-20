@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ガット張り受付システム</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Hiragino Kaku Gothic Pro','Meiryo','Yu Gothic',sans-serif;background:#f5f4ef;color:#1a1a1a;min-height:100vh}
+.app-header{background:#1a3a2a;color:white;padding:1rem 1.5rem;display:flex;align-items:center;gap:12px}
+.app-header h1{font-size:18px;font-weight:500}
+.hbadge{background:#4caf8a;font-size:11px;padding:2px 8px;border-radius:12px;font-weight:500}
+.tabs{display:flex;background:#132d1f;padding:0 1rem;overflow-x:auto}
+.tab{padding:.7rem 1rem;font-size:13px;color:rgba(255,255,255,.6);cursor:pointer;border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;transition:all .2s;font-family:inherit;white-space:nowrap}
+.tab.active{color:#fff;border-bottom-color:#4caf8a}
+.main{padding:1rem;max-width:900px;margin:0 auto}
+.sc{background:#fff;border:0.5px solid rgba(0,0,0,.12);border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+.st{font-size:12px;font-weight:500;color:#4caf8a;text-transform:uppercase;letter-spacing:.08em;margin-bottom:1rem;display:flex;align-items:center;gap:6px}
+.st::before{content:'';display:inline-block;width:3px;height:14px;background:#4caf8a;border-radius:2px}
+.fg{display:flex;flex-direction:column;gap:5px}
+label{font-size:12px;color:#666;font-weight:500}
+input[type=text],input[type=datetime-local],input[type=number],textarea{padding:8px 10px;border:0.5px solid rgba(0,0,0,.2);border-radius:8px;font-size:14px;background:#fff;color:#1a1a1a;width:100%;font-family:inherit;transition:border-color .15s;-webkit-appearance:none}
+input:focus,textarea:focus{outline:none;border-color:#4caf8a;box-shadow:0 0 0 2px rgba(76,175,138,.15)}
+textarea{resize:vertical;min-height:60px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:600px){.g2{grid-template-columns:1fr}.g3{grid-template-columns:1fr}}
+.tw{display:flex;border:0.5px solid rgba(0,0,0,.2);border-radius:8px;overflow:hidden}
+.to{flex:1;text-align:center;padding:8px 4px;font-size:12px;cursor:pointer;border:none;background:transparent;color:#888;font-family:inherit;transition:all .15s;line-height:1.3;-webkit-tap-highlight-color:transparent}
+.to.active{background:#1a3a2a;color:#fff;font-weight:500}
+.to:not(:last-child){border-right:0.5px solid rgba(0,0,0,.15)}
+.to.warn.active{background:#c0392b}
+.btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;border:0.5px solid;font-family:inherit;-webkit-tap-highlight-color:transparent}
+.btn-p{background:#1a3a2a;border-color:#1a3a2a;color:#fff}
+.btn-p:hover{background:#254d39}
+.btn-s{background:transparent;border-color:rgba(0,0,0,.2);color:#666}
+.btn-s:hover{background:#f5f5f5}
+.btn-d{background:transparent;border-color:#e24b4a;color:#a32d2d;font-size:12px;padding:6px 12px}
+.btn-d:hover{background:#fcebeb}
+.racket-tabs{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+.rtab{padding:7px 14px;border-radius:20px;font-size:13px;cursor:pointer;border:0.5px solid rgba(0,0,0,.2);background:transparent;color:#888;font-family:inherit;font-weight:500;transition:all .15s;-webkit-tap-highlight-color:transparent}
+.rtab.active{background:#1a3a2a;border-color:#1a3a2a;color:#fff}
+.add-racket-btn{padding:7px 12px;border-radius:20px;font-size:13px;cursor:pointer;border:0.5px dashed rgba(0,0,0,.25);background:transparent;color:#4caf8a;font-family:inherit;font-weight:500;display:flex;align-items:center;gap:4px;transition:all .15s}
+.add-racket-btn:hover{background:#e8f5ee}
+.racket-panel{display:none}
+.racket-panel.active{display:block}
+.rkt-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:0.5px solid rgba(0,0,0,.1)}
+.rkt-label{font-size:15px;font-weight:500}
+.submit-row{display:flex;gap:10px;justify-content:flex-end;margin-top:1.5rem;flex-wrap:wrap}
+.list-controls{display:flex;gap:8px;margin-bottom:1rem;align-items:center;flex-wrap:wrap}
+.list-controls input[type=text]{max-width:200px;flex:1}
+.fb{padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:0.5px solid;font-family:inherit;font-weight:500;transition:all .15s;-webkit-tap-highlight-color:transparent}
+.fb.on{background:#1a3a2a;border-color:#1a3a2a;color:#fff}
+.fb.off{background:transparent;border-color:rgba(0,0,0,.2);color:#888}
+.oc{background:#fff;border:0.5px solid rgba(0,0,0,.12);border-radius:12px;padding:1rem 1.25rem;margin-bottom:10px;transition:border-color .15s}
+.oc:hover{border-color:#4caf8a}
+.oh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px}
+.on2{font-size:16px;font-weight:500}
+.om{font-size:12px;color:#888;margin-top:2px}
+.bgs{display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0}
+.bp{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500}
+.bpaid{background:#e8f0fe;color:#1a3a8a}
+.bunpaid{background:#fce8e8;color:#8a1a1a}
+.rkt-list{margin-top:10px;border-top:0.5px solid rgba(0,0,0,.08);padding-top:10px}
+.rkt-item{background:#f9f9f7;border:0.5px solid rgba(0,0,0,.1);border-radius:8px;padding:10px 12px;margin-bottom:6px}
+.rkt-title{font-size:13px;font-weight:500;margin-bottom:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.rkt-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px 12px;font-size:12px}
+@media(min-width:500px){.rkt-grid{grid-template-columns:repeat(4,1fr)}}
+.di{color:#888}
+.di span{color:#1a1a1a;font-weight:500}
+.oa{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;align-items:center}
+.ab{font-size:12px;padding:6px 12px;border-radius:6px;border:0.5px solid rgba(0,0,0,.2);cursor:pointer;background:transparent;color:#666;font-family:inherit;transition:all .15s;-webkit-tap-highlight-color:transparent}
+.ab:hover{background:#f5f5f5}
+.ab.primary{background:#1a3a2a;border-color:#1a3a2a;color:#fff}
+.ab.danger{color:#a32d2d;border-color:#a32d2d}
+.ab.danger:hover{background:#fcebeb}
+.empty{text-align:center;padding:3rem;color:#888;font-size:14px}
+.rcnt{background:#4caf8a;color:#fff;border-radius:50%;width:20px;height:20px;font-size:11px;display:inline-flex;align-items:center;justify-content:center;font-weight:500;flex-shrink:0}
+.gbadge{display:inline-block;font-size:11px;padding:2px 7px;border-radius:10px;font-weight:500}
+.g-shop{background:#e8f5ee;color:#1a6b42}
+.g-keep{background:#e8f0fe;color:#1a3a8a}
+.g-single{background:#fef3e2;color:#8a5a00}
+.g-roll{background:#f0f0f0;color:#444}
+.warn-badge{background:#fce8e8;color:#8a1a1a;font-size:11px;padding:2px 7px;border-radius:10px;font-weight:500}
+.ok-badge{background:#e8f5ee;color:#1a6b42;font-size:11px;padding:2px 7px;border-radius:10px;font-weight:500}
+.scard{background:#fff;border:0.5px solid rgba(0,0,0,.12);border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+.stitle{font-size:15px;font-weight:500;margin-bottom:4px}
+.sdesc{font-size:13px;color:#888;margin-bottom:1rem}
+.urow{display:flex;gap:8px}
+.urow input{flex:1}
+.notice{font-size:12px;color:#4caf8a;margin-top:8px}
+.notice.err{color:#c0392b}
+.slist{font-size:13px;color:#666;line-height:2.2;padding-left:1.2rem}
+.info-box{background:#e6f1fb;border:0.5px solid rgba(24,95,165,.3);border-radius:8px;padding:.75rem 1rem;font-size:13px;color:#0C447C;margin-bottom:1rem;line-height:1.6}
+.color-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:.75rem}
+.cl-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#888}
+.cl-dot{width:14px;height:14px;border-radius:3px;flex-shrink:0}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a3a2a;color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:500;opacity:0;transition:all .3s;z-index:9999;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{background:#8a1a1a}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
+  <h1>ガット張り受付システム</h1>
+  <span class="hbadge">Sheets連携</span>
+</div>
+<div class="tabs">
+  <button class="tab active" onclick="showTab('form',this)">新規受付</button>
+  <button class="tab" onclick="showTab('list',this)">受付一覧</button>
+  <button class="tab" onclick="showTab('settings',this)">設定</button>
+</div>
+
+<div class="main">
+
+<!-- 新規受付 -->
+<div id="tab-form">
+  <form id="reception-form" onsubmit="submitForm(event)">
+    <div class="sc">
+      <div class="st">受付・仕上がり日時</div>
+      <div class="g2">
+        <div class="fg"><label>受付日時</label><input type="datetime-local" id="f-received" required></div>
+        <div class="fg"><label>仕上がり予定日時</label><input type="datetime-local" id="f-due"></div>
+      </div>
+    </div>
+    <div class="sc">
+      <div class="st">お客様情報</div>
+      <div class="fg"><label>お客様名</label><input type="text" id="f-customer" placeholder="例：山田 太郎" required></div>
+    </div>
+    <div class="sc">
+      <div class="st">ラケット・ガット情報</div>
+      <div class="racket-tabs" id="racket-tabs"></div>
+      <div id="racket-panels"></div>
+      <div style="margin-top:.5rem">
+        <button type="button" class="add-racket-btn" onclick="addRacket()">
+          ＋ ラケットを追加
+        </button>
+      </div>
+    </div>
+    <div class="sc">
+      <div class="st">会計</div>
+      <div class="fg"><label>会計状況</label><div class="tw" id="tog-payment"></div></div>
+    </div>
+    <div class="submit-row">
+      <button type="button" class="btn btn-s" onclick="resetForm()">リセット</button>
+      <button type="submit" class="btn btn-p">受付登録 → Sheetsに保存</button>
+    </div>
+  </form>
+</div>
+
+<!-- 受付一覧 -->
+<div id="tab-list" style="display:none">
+  <div class="info-box">
+    作業状況・お渡し状況はスプレッドシート上で変更します。ステータスを変更すると自動でシートが移動します。
+  </div>
+  <div class="list-controls">
+    <input type="text" id="search-input" placeholder="お客様名・ラケットで検索" oninput="renderList()">
+    <button class="fb on" id="filt-all" onclick="setFilter('all')">すべて</button>
+    <button class="fb off" id="filt-unpaid" onclick="setFilter('unpaid')">会計未</button>
+    <button class="btn btn-s" style="font-size:12px;padding:6px 12px" onclick="exportToSheets()">Sheetsに書き込み</button>
+  </div>
+  <div id="order-list"></div>
+</div>
+
+<!-- 設定 -->
+<div id="tab-settings" style="display:none">
+  <div class="scard">
+    <div class="stitle">仕上がり予定日の色分けルール（作業未シート）</div>
+    <div class="color-legend">
+      <div class="cl-item"><div class="cl-dot" style="background:#ffffff;border:1px solid #ccc"></div>当日（白）</div>
+      <div class="cl-item"><div class="cl-dot" style="background:#B5D4F4"></div>翌日（青）</div>
+      <div class="cl-item"><div class="cl-dot" style="background:#FAC775"></div>2日後（黄）</div>
+      <div class="cl-item"><div class="cl-dot" style="background:#C0DD97"></div>3日以降（緑）</div>
+      <div class="cl-item"><div class="cl-dot" style="background:#F7C1C1"></div>期限超過（赤）</div>
+      <div class="cl-item"><div class="cl-dot" style="background:#D3D1C7"></div>未設定（グレー）</div>
+    </div>
+  </div>
+  <div class="scard">
+    <div class="stitle">Google スプレッドシート連携</div>
+    <div class="sdesc">Google Apps Script のウェブアプリURLを設定してください。</div>
+    <div class="urow">
+      <input type="text" id="gas-url" placeholder="https://script.google.com/macros/s/..." oninput="saveSettings()">
+      <button class="btn btn-p" onclick="testConnection()">接続テスト</button>
+    </div>
+    <div id="conn-notice" class="notice" style="display:none"></div>
+  </div>
+  <div class="scard">
+    <div class="stitle">Google Apps Script の設定方法</div>
+    <div class="sdesc">以下の手順でGASを設定してください：</div>
+    <ol class="slist">
+      <li>Google スプレッドシートを新規作成する</li>
+      <li>「拡張機能」→「Apps Script」を開く</li>
+      <li>GASコードをコピーして貼り付ける</li>
+      <li>「デプロイ」→「新しいデプロイ」→「ウェブアプリ」</li>
+      <li>アクセス権限を「全員」に設定してデプロイ</li>
+      <li>発行されたURLをここに貼り付ける</li>
+    </ol>
+    <div style="margin-top:1rem">
+      <button class="btn btn-s" style="font-size:13px" onclick="copyGasCode()">GASコードをコピー</button>
+    </div>
+    <div style="margin-top:.75rem;font-size:12px;color:#888;line-height:1.8">
+      ※ ラケット1本につき1行で出力（複数本は複数行）<br>
+      ※ 作業未シートは仕上がり予定日時の昇順で自動ソート<br>
+      ※ D列・E列のプルダウンでステータス変更 → シート自動移動<br>
+      ※ 作業未シートは仕上がり予定日ごとにセルが自動色分け
+    </div>
+  </div>
+</div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+var STORE_KEY='gut_orders_v5';
+var SETTINGS_KEY='gut_settings';
+var currentFilter='all';
+var rackets=[];
+var racketCounter=0;
+var GUT_OPTS=['購入','キープロール','単張り持ち込み','ロール持ち込み'];
+
+function makeTog(id,opts,defIdx,warnIdx){
+  var el=document.getElementById(id);if(!el)return;el.innerHTML='';
+  opts.forEach(function(o,i){
+    var btn=document.createElement('button');btn.type='button';
+    btn.className='to'+(i===defIdx?' active':'')+(warnIdx===i?' warn':'');
+    btn.textContent=o;
+    btn.onclick=function(){el.querySelectorAll('.to').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');};
+    el.appendChild(btn);
+  });
+}
+function getTog(id){var el=document.getElementById(id);var a=el&&el.querySelector('.to.active');return a?a.textContent:'';}
+function makePTog(cid,opts,defIdx,warnIdx){
+  var el=document.getElementById(cid);if(!el)return;el.innerHTML='';
+  opts.forEach(function(o,i){
+    var btn=document.createElement('button');btn.type='button';
+    btn.className='to'+(i===defIdx?' active':'')+(warnIdx===i?' warn':'');
+    btn.textContent=o;
+    btn.onclick=function(){el.querySelectorAll('.to').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');};
+    el.appendChild(btn);
+  });
+}
+function getPTog(cid){var el=document.getElementById(cid);var a=el&&el.querySelector('.to.active');return a?a.textContent:'';}
+
+function addRacket(data){
+  var id='r'+Date.now()+(racketCounter++);
+  rackets.push(id);renderRacketTabs();renderRacketPanel(id,data);activateRacket(id);return id;
+}
+function renderRacketTabs(){
+  var tabs=document.getElementById('racket-tabs');tabs.innerHTML='';
+  rackets.forEach(function(id,i){
+    var btn=document.createElement('button');btn.type='button';btn.id='rtab-'+id;btn.className='rtab';
+    btn.textContent='ラケット '+(i+1);btn.onclick=function(){activateRacket(id);};tabs.appendChild(btn);
+  });
+}
+function gutDefIdx(val){var i=GUT_OPTS.indexOf(val);return i>=0?i:0;}
+function renderRacketPanel(id,data){
+  var panels=document.getElementById('racket-panels');var d=data||{};
+  var div=document.createElement('div');div.className='racket-panel';div.id='rpanel-'+id;
+  div.innerHTML=
+    '<div class="rkt-header">'+
+      '<div class="rkt-label">ラケット情報</div>'+
+      (rackets.length>1?'<button type="button" class="btn btn-d" onclick="removeRacket(\''+id+'\')">削除</button>':'')+
+    '</div>'+
+    '<div class="g2" style="margin-bottom:12px">'+
+      '<div class="fg"><label>ラケット名</label><input type="text" id="'+id+'-racket" placeholder="例：YONEX EZONE 98" value="'+(d.racket||'')+'"></div>'+
+      '<div class="fg"><label>ラケット区分</label><div class="tw" id="'+id+'-tog-racket"></div></div>'+
+    '</div>'+
+    '<div class="g3" style="margin-bottom:12px">'+
+      '<div class="fg"><label>ガットの種類</label><input type="text" id="'+id+'-gut-type" placeholder="例：ポリツアーエア" value="'+(d.gutType||'')+'"></div>'+
+      '<div class="fg"><label>ガットカラー</label><input type="text" id="'+id+'-gut-color" placeholder="例：イエロー" value="'+(d.gutColor||'')+'"></div>'+
+      '<div class="fg"><label>テンション（lb）</label><input type="number" id="'+id+'-tension" min="10" max="70" step="0.5" placeholder="例：50" value="'+(d.tension||'')+'"></div>'+
+    '</div>'+
+    '<div class="fg" style="margin-bottom:12px">'+
+      '<label>ガット区分</label><div class="tw" id="'+id+'-tog-gut"></div>'+
+    '</div>'+
+    '<div class="g3" style="margin-bottom:12px">'+
+      '<div class="fg"><label>ケース預かり</label><div class="tw" id="'+id+'-tog-case"></div></div>'+
+      '<div class="fg"><label>グリップテープ</label><div class="tw" id="'+id+'-tog-grip"></div></div>'+
+      '<div class="fg"><label>ステンシル</label><div class="tw" id="'+id+'-tog-stencil"></div></div>'+
+    '</div>'+
+    '<div class="g2" style="margin-bottom:12px">'+
+      '<div class="fg"><label>グロメット</label><div class="tw" id="'+id+'-tog-grommet"></div></div>'+
+      '<div class="fg"><label>折れ・変形</label><div class="tw" id="'+id+'-tog-deform"></div></div>'+
+    '</div>'+
+    '<div class="fg">'+
+      '<label>ラケットの備考</label>'+
+      '<textarea id="'+id+'-note" placeholder="このラケットに関する特記事項">'+(d.note||'')+'</textarea>'+
+    '</div>';
+  panels.appendChild(div);
+  makePTog(id+'-tog-racket',['新規購入','持ち込み'],d.racketType==='持ち込み'?1:0);
+  makePTog(id+'-tog-gut',GUT_OPTS,gutDefIdx(d.gutSource));
+  makePTog(id+'-tog-case',['預かりあり','預かりなし'],d.caseKeeping==='預かりあり'?0:1);
+  makePTog(id+'-tog-grip',['右巻き','左巻き','巻き無し'],d.gripTape==='右巻き'?0:d.gripTape==='左巻き'?1:2);
+  makePTog(id+'-tog-stencil',['赤','黒','無し'],d.stencil==='赤'?0:d.stencil==='黒'?1:2);
+  makePTog(id+'-tog-grommet',['全交換','一部交換','交換無し'],d.grommet==='全交換'?0:d.grommet==='一部交換'?1:2);
+  makePTog(id+'-tog-deform',['了承済み','未'],d.deform==='了承済み'?0:1,0);
+}
+function activateRacket(id){
+  document.querySelectorAll('.racket-panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.rtab').forEach(function(b){b.classList.remove('active');});
+  var p=document.getElementById('rpanel-'+id);var t=document.getElementById('rtab-'+id);
+  if(p)p.classList.add('active');if(t)t.classList.add('active');
+}
+function removeRacket(id){
+  if(rackets.length<=1){showToast('最低1本のラケットが必要です',true);return;}
+  var idx=rackets.indexOf(id);rackets.splice(idx,1);
+  var p=document.getElementById('rpanel-'+id);if(p)p.remove();
+  renderRacketTabs();activateRacket(rackets[Math.min(idx,rackets.length-1)]);
+}
+function getRacketData(id){
+  return{
+    racket:document.getElementById(id+'-racket')?document.getElementById(id+'-racket').value:'',
+    racketType:getPTog(id+'-tog-racket'),
+    gutType:document.getElementById(id+'-gut-type')?document.getElementById(id+'-gut-type').value:'',
+    gutColor:document.getElementById(id+'-gut-color')?document.getElementById(id+'-gut-color').value:'',
+    tension:document.getElementById(id+'-tension')?document.getElementById(id+'-tension').value:'',
+    gutSource:getPTog(id+'-tog-gut'),
+    caseKeeping:getPTog(id+'-tog-case'),
+    gripTape:getPTog(id+'-tog-grip'),
+    grommet:getPTog(id+'-tog-grommet'),
+    stencil:getPTog(id+'-tog-stencil'),
+    deform:getPTog(id+'-tog-deform'),
+    note:document.getElementById(id+'-note')?document.getElementById(id+'-note').value:''
+  };
+}
+function initForm(){
+  makeTog('tog-payment',['会計未','会計済み'],0);
+  rackets=[];document.getElementById('racket-panels').innerHTML='';document.getElementById('racket-tabs').innerHTML='';racketCounter=0;addRacket();
+}
+function resetForm(){
+  document.getElementById('f-received').value=toLocalDt(new Date());
+  document.getElementById('f-due').value='';document.getElementById('f-customer').value='';initForm();
+}
+function toLocalDt(d){
+  function p(n){return String(n).padStart(2,'0');}
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes());
+}
+function submitForm(e){
+  e.preventDefault();
+  var rktData=rackets.map(function(id){return getRacketData(id);});
+  var order={id:Date.now().toString(),createdAt:new Date().toISOString(),received:document.getElementById('f-received').value,due:document.getElementById('f-due').value,customer:document.getElementById('f-customer').value,payment:getTog('tog-payment'),rackets:rktData};
+  var orders=getOrders();orders.unshift(order);saveOrders(orders);
+  pushToSheets([order],true);
+  showToast('受付登録しました！（ラケット'+rktData.length+'本）');resetForm();
+}
+function getOrders(){try{return JSON.parse(localStorage.getItem(STORE_KEY)||'[]');}catch(e){return[];}}
+function saveOrders(o){localStorage.setItem(STORE_KEY,JSON.stringify(o));}
+function fmtDt(dt){if(!dt)return'';var d=new Date(dt);return d.toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});}
+
+function showTab(name,el){
+  ['form','list','settings'].forEach(function(t){document.getElementById('tab-'+t).style.display=(t===name)?'':'none';});
+  document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});el.classList.add('active');
+  if(name==='list')renderList();if(name==='settings')loadSettings();
+}
+function setFilter(f){
+  currentFilter=f;
+  ['all','unpaid'].forEach(function(k){document.getElementById('filt-'+k).className='fb '+(k===f?'on':'off');});
+  renderList();
+}
+function gutBadgeClass(src){if(src==='購入')return'g-shop';if(src==='キープロール')return'g-keep';if(src==='単張り持ち込み')return'g-single';return'g-roll';}
+
+function renderList(){
+  var orders=getOrders();
+  var q=(document.getElementById('search-input').value||'').toLowerCase();
+  var el=document.getElementById('order-list');
+  var filtered=orders.filter(function(o){
+    var names=(o.rackets||[]).map(function(r){return r.racket;}).join(' ');
+    var match=!q||o.customer.toLowerCase().indexOf(q)>=0||names.toLowerCase().indexOf(q)>=0;
+    if(!match)return false;
+    if(currentFilter==='unpaid')return o.payment==='会計未';
+    return true;
+  });
+  if(!filtered.length){el.innerHTML='<div class="empty">受付データがありません</div>';return;}
+  el.innerHTML=filtered.map(function(o){
+    var rktItems=(o.rackets||[]).map(function(r,i){
+      return '<div class="rkt-item">'+
+        '<div class="rkt-title">'+
+          '<span style="background:#1a3a2a;color:#fff;border-radius:4px;padding:1px 7px;font-size:11px">'+(i+1)+'</span>'+
+          (r.racket||'（ラケット名未入力）')+
+          '<span style="font-size:11px;color:#888">'+(r.racketType||'')+'</span>'+
+          '<span class="gbadge '+gutBadgeClass(r.gutSource)+'">'+(r.gutSource||'')+'</span>'+
+          (r.deform==='了承済み'?'<span class="warn-badge">折れ変形了承済み</span>':'<span class="ok-badge">折れ変形未</span>')+
+        '</div>'+
+        '<div class="rkt-grid">'+
+          '<div class="di">ガット <span>'+(r.gutType||'—')+'</span></div>'+
+          '<div class="di">カラー <span>'+(r.gutColor||'—')+'</span></div>'+
+          '<div class="di">テンション <span>'+(r.tension?r.tension+'lb':'—')+'</span></div>'+
+          '<div class="di">ケース <span>'+(r.caseKeeping||'—')+'</span></div>'+
+          '<div class="di">グリップ <span>'+(r.gripTape||'—')+'</span></div>'+
+          '<div class="di">グロメット <span>'+(r.grommet||'—')+'</span></div>'+
+          '<div class="di">ステンシル <span>'+(r.stencil||'—')+'</span></div>'+
+        '</div>'+
+        (r.note?'<div style="font-size:12px;color:#888;margin-top:6px">備考：<span style="color:#1a1a1a">'+r.note+'</span></div>':'')+
+      '</div>';
+    }).join('');
+    return '<div class="oc">'+
+      '<div class="oh">'+
+        '<div>'+
+          '<div class="on2">'+o.customer+' <span class="rcnt">'+((o.rackets||[]).length)+'</span></div>'+
+          '<div class="om">受付：'+fmtDt(o.received)+'　仕上がり予定：'+(fmtDt(o.due)||'未設定')+'</div>'+
+        '</div>'+
+        '<div class="bgs">'+
+          '<span class="bp '+(o.payment==='会計済み'?'bpaid':'bunpaid')+'">'+o.payment+'</span>'+
+        '</div>'+
+      '</div>'+
+      '<div class="rkt-list">'+rktItems+'</div>'+
+      (o.note?'<div style="font-size:12px;color:#888;margin-top:8px;padding-top:8px;border-top:0.5px solid rgba(0,0,0,.08)">備考：<span style="color:#1a1a1a">'+o.note+'</span></div>':'')+
+      '<div class="oa">'+
+        (o.payment==='会計未'?'<button class="ab primary" onclick="togglePay(\''+o.id+'\')">会計済みにする</button>':'<button class="ab" onclick="togglePay(\''+o.id+'\')">会計未に戻す</button>')+
+        '<button class="ab danger" style="margin-left:auto" onclick="deleteOrder(\''+o.id+'\')">削除</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function togglePay(id){
+  var orders=getOrders();var o=orders.find(function(x){return x.id===id;});if(!o)return;
+  o.payment=o.payment==='会計未'?'会計済み':'会計未';saveOrders(orders);renderList();
+}
+function deleteOrder(id){
+  if(!confirm('このデータを削除しますか？'))return;
+  saveOrders(getOrders().filter(function(o){return o.id!==id;}));renderList();showToast('削除しました');
+}
+function orderToRows(o){
+  return(o.rackets||[]).map(function(r,i){return[
+    o.id,i+1,o.received,o.due,'作業未','お渡し未',
+    o.customer,r.racket,r.racketType,
+    r.gutType,r.gutColor,r.gutSource,r.tension,
+    r.caseKeeping,r.gripTape,r.grommet,r.stencil,
+    r.deform||'未',r.note||'',o.payment
+  ];});
+}
+function pushToSheets(orders,silent){
+  var url=getGasUrl();if(!url){if(!silent)showToast('GAS URLが設定されていません',true);return;}
+  var rows=[];orders.forEach(function(o){orderToRows(o).forEach(function(r){rows.push(r);});});
+  fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'append',rows:rows})})
+    .then(function(){if(!silent)showToast('スプレッドシートに書き込みました！');})
+    .catch(function(e){if(!silent)showToast('書き込みエラー: '+e.message,true);});
+}
+function exportToSheets(){
+  var orders=getOrders();if(!orders.length){showToast('データがありません',true);return;}
+  pushToSheets(orders,false);
+}
+function loadSettings(){var s=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');document.getElementById('gas-url').value=s.gasUrl||'';}
+function saveSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify({gasUrl:document.getElementById('gas-url').value}));}
+function getGasUrl(){return(JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}')).gasUrl||'';}
+function testConnection(){
+  var url=document.getElementById('gas-url').value;var notice=document.getElementById('conn-notice');
+  if(!url){notice.style.display='';notice.className='notice err';notice.textContent='URLを入力してください';return;}
+  notice.style.display='';notice.className='notice';notice.textContent='接続テスト中...';
+  fetch(url+'?test=1',{mode:'no-cors'})
+    .then(function(){notice.className='notice';notice.textContent='✔ 接続成功（URLが有効です）';})
+    .catch(function(e){notice.className='notice err';notice.textContent='✘ 接続失敗: '+e.message;});
+}
+
+var GAS_CODE='// ガット張り受付システム - Google Apps Script（v6）\n'+
+'const SHEET_PENDING   = \'作業未\';\n'+
+'const SHEET_DONE      = \'作業完了\';\n'+
+'const SHEET_DELIVERED = \'お渡し済み\';\n'+
+'const HEADERS = [\'ID\',\'ラケット番号\',\'受付日時\',\'仕上がり予定\',\'作業状況\',\'お渡し状況\',\'お客様名\',\'ラケット名\',\'ラケット区分\',\'ガット種類\',\'ガットカラー\',\'ガット区分\',\'テンション(lb)\',\'ケース\',\'グリップテープ\',\'グロメット\',\'ステンシル\',\'折れ変形\',\'ラケット備考\',\'会計状況\'];\n'+
+'const COL_ID=1,COL_WORK=5,COL_DELIVERY=6,COL_DUE=4,NUM_COLS=HEADERS.length;\n'+
+'const COLOR_TODAY={bg:\'#FFFFFF\',font:\'#1a1a1a\'};\n'+
+'const COLOR_TOMORROW={bg:\'#B5D4F4\',font:\'#042C53\'};\n'+
+'const COLOR_DAY2={bg:\'#FAC775\',font:\'#412402\'};\n'+
+'const COLOR_DAY3PLUS={bg:\'#C0DD97\',font:\'#173404\'};\n'+
+'const COLOR_OVERDUE={bg:\'#F7C1C1\',font:\'#501313\'};\n'+
+'const COLOR_NODATE={bg:\'#D3D1C7\',font:\'#2C2C2A\'};\n'+
+'function getDayDiff(d){if(!d)return null;var now=new Date();var today=new Date(now.getFullYear(),now.getMonth(),now.getDate());var due=new Date(d);var dd=new Date(due.getFullYear(),due.getMonth(),due.getDate());return Math.round((dd-today)/86400000);}\n'+
+'function getRowColor(d){var diff=getDayDiff(d);if(diff===null)return COLOR_NODATE;if(diff<0)return COLOR_OVERDUE;if(diff===0)return COLOR_TODAY;if(diff===1)return COLOR_TOMORROW;if(diff===2)return COLOR_DAY2;return COLOR_DAY3PLUS;}\n'+
+'function applyRowColor(sheet,row,d){var c=getRowColor(d);sheet.getRange(row,1,1,NUM_COLS).setBackground(c.bg).setFontColor(c.font);}\n'+
+'function recolorAllRows(sheet){var last=sheet.getLastRow();if(last<2)return;for(var i=2;i<=last;i++){var d=sheet.getRange(i,COL_DUE).getValue();applyRowColor(sheet,i,d?String(d):null);}}\n'+
+'function initSheet(sheet){if(sheet.getLastRow()===0){sheet.appendRow(HEADERS);sheet.getRange(1,1,1,NUM_COLS).setFontWeight(\'bold\').setBackground(\'#1a3a2a\').setFontColor(\'#ffffff\');sheet.setFrozenRows(1);}}\n'+
+'function getOrCreateSheet(ss,name){var s=ss.getSheetByName(name);if(!s){s=ss.insertSheet(name);initSheet(s);}return s;}\n'+
+'function setDropdown(sheet,row,name){if(name===SHEET_PENDING||name===SHEET_DONE){sheet.getRange(row,COL_WORK).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList([\'作業未\',\'作業完了\'],true).build());}if(name===SHEET_DONE){sheet.getRange(row,COL_DELIVERY).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList([\'お渡し未\',\'お渡し済み\'],true).build());}}\n'+
+'function collectDataByID(sheet,tid){var last=sheet.getLastRow();if(last<2)return[];var all=sheet.getRange(2,1,last-1,NUM_COLS).getValues();return all.filter(function(r){return String(r[COL_ID-1]).trim()===String(tid).trim();}).map(function(r){return r.slice();});}\n'+
+'function deleteRowsByID(sheet,tid){for(var i=sheet.getLastRow();i>=2;i--){if(String(sheet.getRange(i,COL_ID).getValue()).trim()===String(tid).trim())sheet.deleteRow(i);}}\n'+
+'function existsInSheet(sheet,tid){var last=sheet.getLastRow();if(last<2)return false;var ids=sheet.getRange(2,COL_ID,last-1,1).getValues();return ids.some(function(r){return String(r[0]).trim()===String(tid).trim();});}\n'+
+'function moveRowsByID(from,to,tid,ow,od){var rows=collectDataByID(from,tid);if(!rows.length)return;var toName=to.getName();rows.forEach(function(data){var nd=data.slice();if(ow!==null)nd[COL_WORK-1]=ow;if(od!==null)nd[COL_DELIVERY-1]=od;to.appendRow(nd);var nr=to.getLastRow();setDropdown(to,nr,toName);if(toName===SHEET_PENDING)applyRowColor(to,nr,nd[COL_DUE-1]?String(nd[COL_DUE-1]):null);});deleteRowsByID(from,tid);}\n'+
+'function sortPendingSheet(sheet){var last=sheet.getLastRow();if(last<=2)return;sheet.getRange(2,1,last-1,NUM_COLS).sort({column:COL_DUE,ascending:true});recolorAllRows(sheet);}\n'+
+'function onEdit(e){var sheet=e.source.getActiveSheet();var sn=sheet.getName();var row=e.range.getRow();var col=e.range.getColumn();var val=e.value;if(row<=1)return;if(sn!==SHEET_PENDING&&sn!==SHEET_DONE)return;if(col!==COL_WORK&&col!==COL_DELIVERY)return;var tid=String(sheet.getRange(row,COL_ID).getValue()).trim();if(!tid)return;var lock=LockService.getScriptLock();try{lock.waitLock(10000);}catch(err){return;}try{var ss=e.source;if(sn===SHEET_PENDING&&col===COL_WORK&&val===\'作業完了\'){if(!existsInSheet(sheet,tid))return;var done=getOrCreateSheet(ss,SHEET_DONE);moveRowsByID(sheet,done,tid,\'作業完了\',null);sortPendingSheet(sheet);return;}if(sn===SHEET_DONE&&col===COL_DELIVERY&&val===\'お渡し済み\'){if(!existsInSheet(sheet,tid))return;var deliv=getOrCreateSheet(ss,SHEET_DELIVERED);moveRowsByID(sheet,deliv,tid,null,\'お渡し済み\');return;}if(sn===SHEET_DONE&&col===COL_WORK&&val===\'作業未\'){if(!existsInSheet(sheet,tid))return;var pend=getOrCreateSheet(ss,SHEET_PENDING);moveRowsByID(sheet,pend,tid,\'作業未\',\'お渡し未\');sortPendingSheet(pend);}}finally{lock.releaseLock();}}\n'+
+'function dailyRecolor(){var ss=SpreadsheetApp.getActiveSpreadsheet();var p=ss.getSheetByName(SHEET_PENDING);if(p)recolorAllRows(p);}\n'+
+'function doPost(e){var data=JSON.parse(e.postData.contents);var ss=SpreadsheetApp.getActiveSpreadsheet();var ps=getOrCreateSheet(ss,SHEET_PENDING);getOrCreateSheet(ss,SHEET_DONE);getOrCreateSheet(ss,SHEET_DELIVERED);if(data.action===\'append\'){data.rows.forEach(function(row){ps.appendRow(row);var nr=ps.getLastRow();setDropdown(ps,nr,SHEET_PENDING);applyRowColor(ps,nr,row[COL_DUE-1]?String(row[COL_DUE-1]):null);});sortPendingSheet(ps);}return ContentService.createTextOutput(JSON.stringify({status:\'ok\'})).setMimeType(ContentService.MimeType.JSON);}\n'+
+'function doGet(e){return ContentService.createTextOutput(JSON.stringify({status:\'ok\'})).setMimeType(ContentService.MimeType.JSON);}';
+
+function copyGasCode(){
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(GAS_CODE).then(function(){showToast('GASコードをコピーしました！');});
+  } else {
+    var ta=document.createElement('textarea');ta.value=GAS_CODE;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('GASコードをコピーしました！');
+  }
+}
+
+var toastTimer;
+function showToast(msg,isErr){
+  var t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(isErr?' err':'');
+  clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.className='toast';},2800);
+}
+
+initForm();
+document.getElementById('f-received').value=toLocalDt(new Date());
+</script>
+</body>
+</html>
