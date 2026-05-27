@@ -819,7 +819,7 @@ function renderList(){
 }
 function togglePay(id){var orders=getOrders();var o=orders.find(function(x){return x.id===id;});if(!o)return;o.payment=o.payment==='会計未'?'会計済み':'会計未';saveOrders(orders);renderList();}
 function deleteOrder(id){if(!confirm('このデータを削除しますか？'))return;saveOrders(getOrders().filter(function(o){return o.id!==id;}));renderList();showToast('削除しました');}
-function orderToRows(o){return(o.rackets||[]).map(function(r,i){return[o.id,i+1,o.received,o.due,'作業未','お渡し未',o.customer,o.tel||'',r.racket,r.racketType,r.gutType,r.gutColor,r.gutSource,r.tension,r.caseKeeping,r.gripTape,r.grommet,r.stencil,r.deform||'',r.note||'',o.payment];});}
+function orderToRows(o){return(o.rackets||[]).map(function(r,i){return[o.id,i+1,o.received,o.due,'作業未','お渡し未',o.customer,r.racket,r.racketType,r.gutType,r.gutColor,r.gutSource,r.tension,r.caseKeeping,r.gripTape,r.grommet,r.stencil,r.deform||'',r.note||'',o.payment];});}
 function pushToSheets(orders,silent){
   var url=getGasUrl();if(!url){if(!silent)showToast('GAS URLが設定されていません',true);return;}
   var rows=[];orders.forEach(function(o){orderToRows(o).forEach(function(r){rows.push(r);});});
