@@ -119,9 +119,38 @@ textarea{resize:vertical;min-height:60px}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a3a2a;color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:500;opacity:0;transition:all .3s;z-index:9999;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast.err{background:#8a1a1a}
+
+@media print {
+  body > *:not(#print-frame){ display:none !important; }
+  #print-frame{ display:block !important; }
+}
+#print-frame{ display:none; }
+.print-page{
+  width:80mm;
+  font-family:'Hiragino Kaku Gothic Pro','Meiryo',sans-serif;
+  font-size:12px;
+  color:#000;
+  padding:4mm 3mm;
+  page-break-after:always;
+}
+.print-page:last-child{ page-break-after:auto; }
+.print-shop{ font-size:11px; text-align:center; margin-bottom:2mm; }
+.print-type{ font-size:14px; font-weight:bold; text-align:center; border:1px solid #000; padding:1mm 0; margin-bottom:2mm; }
+.print-customer{ font-size:16px; font-weight:bold; margin-bottom:1mm; }
+.print-tel{ font-size:12px; margin-bottom:2mm; color:#333; }
+.print-due-label{ font-size:10px; color:#555; }
+.print-due{ font-size:18px; font-weight:bold; margin-bottom:3mm; }
+.print-divider{ border:none; border-top:1px dashed #999; margin:2mm 0; }
+.print-row{ display:flex; justify-content:space-between; font-size:11px; margin-bottom:1mm; }
+.print-row-label{ color:#555; }
+.print-row-val{ font-weight:500; text-align:right; max-width:55mm; }
+.print-racket-title{ font-size:12px; font-weight:bold; margin:2mm 0 1mm; border-left:3px solid #000; padding-left:2mm; }
+.print-note{ font-size:10px; color:#444; margin-top:2mm; border-top:1px solid #ccc; padding-top:1mm; }
+.print-footer{ font-size:10px; text-align:center; margin-top:3mm; color:#555; }
 </style>
 </head>
 <body>
+<div id="print-frame"></div>
 <div class="app-header">
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
   <h1>ガット張り受付システム</h1>
@@ -146,10 +175,16 @@ textarea{resize:vertical;min-height:60px}
     </div>
     <div class="sc">
       <div class="st">お客様情報</div>
-      <div class="fg">
-        <label class="fl">お客様名 <span class="req">*</span></label>
-        <input type="text" id="f-customer" placeholder="例：山田 太郎">
-        <div class="emsg" id="err-customer">お客様名を入力してください</div>
+      <div class="g2">
+        <div class="fg">
+          <label class="fl">お客様名 <span class="req">*</span></label>
+          <input type="text" id="f-customer" placeholder="例：山田 太郎">
+          <div class="emsg" id="err-customer">お客様名を入力してください</div>
+        </div>
+        <div class="fg">
+          <label class="fl">電話番号</label>
+          <input type="text" id="f-tel" placeholder="例：090-1234-5678">
+        </div>
       </div>
     </div>
     <div class="sc">
@@ -635,6 +670,7 @@ function resetForm(){
   document.getElementById('f-received').value=toLocalDt(new Date());
   document.getElementById('f-due').value='';
   var c=document.getElementById('f-customer');c.value='';c.classList.remove('ferr');
+  var tEl=document.getElementById('f-tel');if(tEl)tEl.value='';
   document.getElementById('err-customer').classList.remove('show');
   document.getElementById('errbanner').classList.remove('show');
   initForm();
@@ -666,10 +702,65 @@ function submitForm(e){
   }
   document.getElementById('errbanner').classList.remove('show');
   var rktData=rackets.map(function(id){return getRacketData(id);});
-  var order={id:Date.now().toString(),createdAt:new Date().toISOString(),received:document.getElementById('f-received').value,due:document.getElementById('f-due').value,customer:cust.value.trim(),payment:getRG('rg-payment'),rackets:rktData};
+  var tel=document.getElementById('f-tel')?document.getElementById('f-tel').value.trim():'';
+  var order={id:Date.now().toString(),createdAt:new Date().toISOString(),received:document.getElementById('f-received').value,due:document.getElementById('f-due').value,customer:cust.value.trim(),tel:tel,payment:getRG('rg-payment'),rackets:rktData};
   var orders=getOrders();orders.unshift(order);saveOrders(orders);
   pushToSheets([order],true);
-  showToast('受付登録しました！（ラケット'+rktData.length+'本）');resetForm();
+  showToast('受付登録しました！（ラケット'+rktData.length+'本）');
+  printOrder(order);
+  resetForm();
+}
+
+function fmtDtFull(dt){
+  if(!dt)return'未設定';
+  var d=new Date(dt);
+  return d.getFullYear()+'年'+
+    (d.getMonth()+1)+'月'+
+    d.getDate()+'日（'+
+    ['日','月','火','水','木','金','土'][d.getDay()]+'）'+
+    String(d.getHours()).padStart(2,'0')+':'+
+    String(d.getMinutes()).padStart(2,'0');
+}
+
+function buildPrintHTML(order){
+  var pages='';
+  var due=fmtDtFull(order.due);
+  var rackets=order.rackets||[];
+
+  // 1枚分の共通レイアウト（お客様控え・伝票とも同じ）
+  function singlePage(typeLabel){
+    var p='';
+    p+='<div class="print-page">';
+    p+='<div class="print-type">'+typeLabel+'</div>';
+    p+='<div class="print-customer">'+order.customer+' 様</div>';
+    if(order.tel) p+='<div class="print-tel">TEL: '+order.tel+'</div>';
+    p+='<hr class="print-divider">';
+    p+='<div class="print-due-label">仕上がり予定日時</div>';
+    p+='<div class="print-due">'+due+'</div>';
+    p+='<div class="print-footer">ご来店ありがとうございます</div>';
+    p+='</div>';
+    return p;
+  }
+
+  // お客様控え（1枚）
+  pages+=singlePage('★ お客様控え');
+
+  // ラケット伝票（1枚のみ）
+  pages+=singlePage('【 伝 票 】');
+
+  return pages;
+}
+function printOrder(order){
+  var frame=document.getElementById('print-frame');
+  frame.innerHTML=buildPrintHTML(order);
+  setTimeout(function(){ window.print(); },300);
+}
+
+function printOrderById(id){
+  var orders=getOrders();
+  var o=orders.find(function(x){return x.id===id;});
+  if(!o){showToast('データが見つかりません',true);return;}
+  printOrder(o);
 }
 function getOrders(){try{return JSON.parse(localStorage.getItem(STORE_KEY)||'[]');}catch(e){return[];}}
 function saveOrders(o){localStorage.setItem(STORE_KEY,JSON.stringify(o));}
@@ -721,13 +812,14 @@ function renderList(){
       '<div class="rkt-list">'+ri+'</div>'+
       '<div class="oa">'+
         (o.payment==='会計未'?'<button class="ab primary" onclick="togglePay(\''+o.id+'\')">会計済みにする</button>':'<button class="ab" onclick="togglePay(\''+o.id+'\')">会計未に戻す</button>')+
+        '<button class="ab" onclick="printOrderById(\''+o.id+'\')">🖨 伝票印刷</button>'+
         '<button class="ab danger" style="margin-left:auto" onclick="deleteOrder(\''+o.id+'\')">削除</button>'+
       '</div></div>';
   }).join('');
 }
 function togglePay(id){var orders=getOrders();var o=orders.find(function(x){return x.id===id;});if(!o)return;o.payment=o.payment==='会計未'?'会計済み':'会計未';saveOrders(orders);renderList();}
 function deleteOrder(id){if(!confirm('このデータを削除しますか？'))return;saveOrders(getOrders().filter(function(o){return o.id!==id;}));renderList();showToast('削除しました');}
-function orderToRows(o){return(o.rackets||[]).map(function(r,i){return[o.id,i+1,o.received,o.due,'作業未','お渡し未',o.customer,r.racket,r.racketType,r.gutType,r.gutColor,r.gutSource,r.tension,r.caseKeeping,r.gripTape,r.grommet,r.stencil,r.deform||'',r.note||'',o.payment];});}
+function orderToRows(o){return(o.rackets||[]).map(function(r,i){return[o.id,i+1,o.received,o.due,'作業未','お渡し未',o.customer,o.tel||'',r.racket,r.racketType,r.gutType,r.gutColor,r.gutSource,r.tension,r.caseKeeping,r.gripTape,r.grommet,r.stencil,r.deform||'',r.note||'',o.payment];});}
 function pushToSheets(orders,silent){
   var url=getGasUrl();if(!url){if(!silent)showToast('GAS URLが設定されていません',true);return;}
   var rows=[];orders.forEach(function(o){orderToRows(o).forEach(function(r){rows.push(r);});});
