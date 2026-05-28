@@ -895,6 +895,7 @@ function renderList(){
       '<div class="rkt-list">'+ri+'</div>'+
       '<div class="oa">'+
         (o.payment==='会計未'?'<button class="ab primary" onclick="togglePay(\''+o.id+'\')">会計済みにする</button>':'<button class="ab" onclick="togglePay(\''+o.id+'\')">会計未に戻す</button>')+
+        '<button class="ab" onclick="pushSingleOrder(\''+o.id+'\')">📤 Sheetsに登録</button>'+
         '<button class="ab" onclick="printOrderById(\''+o.id+'\')">🖨 伝票印刷</button>'+
         '<button class="ab danger" style="margin-left:auto" onclick="deleteOrder(\''+o.id+'\')">削除</button>'+
       '</div></div>';
@@ -909,6 +910,13 @@ function pushToSheets(orders,silent){
   fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'append',rows:rows})})
     .then(function(){if(!silent)showToast('スプレッドシートに書き込みました！');})
     .catch(function(e){if(!silent)showToast('書き込みエラー: '+e.message,true);});
+}
+
+function pushSingleOrder(id){
+  var orders=getOrders();
+  var o=orders.find(function(x){return x.id===id;});
+  if(!o){showToast('データが見つかりません',true);return;}
+  pushToSheets([o],false);
 }
 function exportToSheets(){var orders=getOrders();if(!orders.length){showToast('データがありません',true);return;}pushToSheets(orders,false);}
 function loadSettings(){var s=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');document.getElementById('gas-url').value=s.gasUrl||'';}
