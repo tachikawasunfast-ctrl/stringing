@@ -807,6 +807,13 @@ function printOrderById(id){
   printOrder(o);
 }
 
+
+function scrollToRacketSection(){
+  setTimeout(function(){
+    var el=document.getElementById('racket-tabs');
+    if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+  },100);
+}
 function openAddModal(){
   // コピー選択リストを更新
   var sel=document.getElementById('copy-select-source');
@@ -827,6 +834,7 @@ function closeAddModal(){
 function addRacketBlank(){
   closeAddModal();
   addRacket();
+  scrollToRacketSection();
 }
 function showCopySelect(){
   document.getElementById('copy-select-wrap').style.display='block';
@@ -835,10 +843,10 @@ function addRacketCopy(){
   var sel=document.getElementById('copy-select-source');
   var srcId=sel.value;
   if(!srcId){closeAddModal();return;}
-  // コピー元のデータを取得
   var data=getRacketData(srcId);
   closeAddModal();
   addRacket(data);
+  scrollToRacketSection();
 }
 // モーダル外クリックで閉じる
 document.addEventListener('click',function(e){
