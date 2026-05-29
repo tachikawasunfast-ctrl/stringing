@@ -120,33 +120,6 @@ textarea{resize:vertical;min-height:60px}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast.err{background:#8a1a1a}
 
-@media print {
-  body > *:not(#print-frame){ display:none !important; }
-  #print-frame{ display:block !important; }
-}
-#print-frame{ display:none; }
-.print-page{
-  width:80mm;
-  font-family:'Hiragino Kaku Gothic Pro','Meiryo',sans-serif;
-  font-size:12px;
-  color:#000;
-  padding:4mm 3mm;
-  page-break-after:always;
-}
-.print-page:last-child{ page-break-after:auto; }
-.print-shop{ font-size:11px; text-align:center; margin-bottom:2mm; }
-.print-type{ font-size:14px; font-weight:bold; text-align:center; border:1px solid #000; padding:1mm 0; margin-bottom:2mm; }
-.print-customer{ font-size:16px; font-weight:bold; margin-bottom:1mm; }
-.print-tel{ font-size:12px; margin-bottom:2mm; color:#000; }
-.print-due-label{ font-size:10px; color:#000; }
-.print-due{ font-size:18px; font-weight:bold; margin-bottom:3mm; }
-.print-divider{ border:none; border-top:1px dashed #000; margin:2mm 0; }
-.print-row{ display:flex; justify-content:space-between; font-size:11px; margin-bottom:1mm; }
-.print-row-label{ color:#555; }
-.print-row-val{ font-weight:500; text-align:right; max-width:55mm; }
-.print-racket-title{ font-size:12px; font-weight:bold; margin:2mm 0 1mm; border-left:3px solid #000; padding-left:2mm; }
-.print-note{ font-size:10px; color:#444; margin-top:2mm; border-top:1px solid #ccc; padding-top:1mm; }
-.print-footer{ font-size:10px; text-align:center; margin-top:3mm; color:#000; }
 
 .add-modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:1000;display:none;align-items:center;justify-content:center}
 .add-modal-overlay.show{display:flex}
@@ -194,7 +167,6 @@ textarea{resize:vertical;min-height:60px}
     <button type="button" class="add-modal-cancel" onclick="closeAddModal()">キャンセル</button>
   </div>
 </div>
-<div id="print-frame"></div>
 <div class="app-header">
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
   <h1>ガット張り受付システム</h1>
@@ -766,47 +738,173 @@ function fmtDtFull(dt){
     String(d.getMinutes()).padStart(2,'0');
 }
 
-function buildPrintHTML(order){
-  var pages='';
-  var due=fmtDtFull(order.due);
-  var rackets=order.rackets||[];
 
-  // 1枚分の共通レイアウト（お客様控え・伝票とも同じ）
-  function singlePage(typeLabel, showFooter){
-    var p='';
-    p+='<div class="print-page">';
-    p+='<div class="print-type">'+typeLabel+'</div>';
-    p+='<div class="print-customer">'+order.customer+' 様</div>';
-    if(order.tel) p+='<div class="print-tel">TEL: '+order.tel+'</div>';
-    p+='<hr class="print-divider">';
-    p+='<div class="print-due-label">仕上がり予定日時</div>';
-    p+='<div class="print-due">'+due+'</div>';
-    if(showFooter) p+='<div class="print-footer">ご来店ありがとうございます</div>';
-    p+='</div>';
-    return p;
+function fmtDtShort(dt){
+  if(!dt)return'---';
+  var d=new Date(dt);
+  var days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  return (d.getMonth()+1)+'/'+d.getDate()+'('+days[d.getDay()]+') '+
+    String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+
+// Canvas描画でレシート画像を生成（日本語非対応プリンター向け）
+function drawReceiptCanvas(order, isTicket){
+  var PX_PER_MM = 8; // 72dpi相当（80mm幅 = 640px）
+  var W = Math.round(80 * PX_PER_MM); // 640px
+  var rackets = order.rackets || [];
+  var due = fmtDtShort(order.due);
+
+  // フォント定義
+  var F_LARGE  = 'bold 28px Arial,sans-serif';
+  var F_MED    = 'bold 22px Arial,sans-serif';
+  var F_NORMAL = '20px Arial,sans-serif';
+  var F_SMALL  = '17px Arial,sans-serif';
+  var F_TINY   = '15px Arial,sans-serif';
+
+  // 高さ計算用の仮canvasでtextを計測
+  var tmp = document.createElement('canvas');
+  tmp.width = W; tmp.height = 10;
+  var tc = tmp.getContext('2d');
+
+  function wrapText(ctx, text, maxW, font){
+    ctx.font = font;
+    var words = text.split('');
+    var lines = []; var cur = '';
+    for(var i=0;i<words.length;i++){
+      var test = cur + words[i];
+      if(ctx.measureText(test).width > maxW && cur !== ''){
+        lines.push(cur); cur = words[i];
+      } else { cur = test; }
+    }
+    if(cur) lines.push(cur);
+    return lines;
   }
 
-  // お客様控え（1枚）
-  pages+=singlePage('★ お客様控え', true);
+  // ---- レイアウト定義 ----
+  var PAD = 12;
+  var IW = W - PAD*2; // 内側幅
+  var items = []; // {type, text, font, h, extra}
 
-  // ラケット伝票（1枚のみ）
-  pages+=singlePage('【 伝 票 】', false);
+  function addText(text, font, extra){
+    tc.font = font;
+    var lines = wrapText(tc, text, IW, font);
+    var lh = parseInt(font)*1.35;
+    items.push({type:'text', text:text, font:font, lines:lines, lh:lh, h:lines.length*lh + (extra||4)});
+  }
+  function addLine(dashed){ items.push({type:'line', dashed:!!dashed, h:14}); }
+  function addSpace(h){ items.push({type:'space', h:h||6}); }
 
-  return pages;
+  if(!isTicket){
+    // ===== お客様控え =====
+    addText('* Customer Copy *', F_MED, 6);
+    addLine();
+    addText(order.customer, F_LARGE, 4);
+    if(order.tel) addText('TEL: '+order.tel, F_NORMAL, 4);
+    addLine(true);
+    addText('Pick up:', F_SMALL, 2);
+    addText(due, F_MED, 6);
+    addText('Thank you!', F_SMALL, 4);
+  } else {
+    // ===== ラケット伝票（全ラケット1枚にまとめ）=====
+    addText('* Work Order *', F_MED, 6);
+    addLine();
+    addText(order.customer, F_MED, 4);
+    if(order.tel) addText('TEL: '+order.tel, F_NORMAL, 4);
+    addLine(true);
+    addText('Pick up:', F_SMALL, 2);
+    addText(due, F_MED, 4);
+    addLine(true);
+    rackets.forEach(function(r, i){
+      if(i > 0) addLine(true);
+      var rname = (r.racket||'(no name)');
+      addText('['+( i+1)+'/'+ rackets.length+'] '+rname, F_SMALL, 3);
+      var gut = (r.gutType||'-') + (r.gutColor?' '+r.gutColor:'');
+      addText('Gut: '+gut, F_TINY, 2);
+      if(r.tension) addText('Tension: '+r.tension+'lb', F_TINY, 2);
+      if(r.gutSource) addText('('+r.gutSource+')', F_TINY, 2);
+    });
+  }
+
+  // 総高さ算出
+  var totalH = PAD;
+  items.forEach(function(it){ totalH += it.h; });
+  totalH += PAD;
+
+  // 本描画
+  var canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = totalH;
+  var ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0,0,W,totalH);
+  ctx.fillStyle = '#000';
+
+  var y = PAD;
+  items.forEach(function(it){
+    if(it.type === 'text'){
+      ctx.font = it.font;
+      ctx.fillStyle = '#000';
+      it.lines.forEach(function(line){
+        ctx.fillText(line, PAD, y + parseInt(it.font));
+        y += it.lh;
+      });
+      y += (it.h - it.lines.length * it.lh);
+    } else if(it.type === 'line'){
+      ctx.save();
+      if(it.dashed){ ctx.setLineDash([4,4]); } else { ctx.setLineDash([]); }
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(PAD, y+7); ctx.lineTo(W-PAD, y+7);
+      ctx.stroke();
+      ctx.restore();
+      y += it.h;
+    } else {
+      y += it.h;
+    }
+  });
+
+  return canvas;
 }
+
+function printCanvases(canvases){
+  // 各canvasをimgに変換してiframeで印刷
+  var iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:0;height:0;border:none';
+  document.body.appendChild(iframe);
+  var doc = iframe.contentDocument || iframe.contentWindow.document;
+  var imgs = canvases.map(function(c){
+    return '<img src="'+c.toDataURL('image/png')+'" style="display:block;width:100%;page-break-after:always">';
+  }).join('');
+  doc.open();
+  doc.write(
+    '<!DOCTYPE html><html><head><style>'+
+    '@page{margin:0;size:80mm auto}'+
+    'body{margin:0;padding:0;background:#fff}'+
+    'img{display:block;width:100%;page-break-after:always}'+
+    'img:last-child{page-break-after:auto}'+
+    '</style></head><body>'+imgs+'</body></html>'
+  );
+  doc.close();
+  setTimeout(function(){
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+    setTimeout(function(){ document.body.removeChild(iframe); }, 2000);
+  }, 500);
+}
+
 function printOrder(order){
-  var frame=document.getElementById('print-frame');
-  frame.innerHTML=buildPrintHTML(order);
-  setTimeout(function(){ window.print(); },300);
+  var c1 = drawReceiptCanvas(order, false); // お客様控え
+  var c2 = drawReceiptCanvas(order, true);  // 伝票
+  printCanvases([c1, c2]);
 }
 
 function printOrderById(id){
-  var orders=getOrders();
-  var o=orders.find(function(x){return x.id===id;});
-  if(!o){showToast('データが見つかりません',true);return;}
+  var orders = getOrders();
+  var o = orders.find(function(x){ return x.id === id; });
+  if(!o){ showToast('データが見つかりません', true); return; }
   printOrder(o);
 }
-
 
 function scrollToRacketSection(){
   setTimeout(function(){
