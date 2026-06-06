@@ -781,7 +781,7 @@ function buildReceiptHTML(order, isTicket){
   if(!isTicket){
     // お客様控え：シンプル
     html =
-      '<div style="width:75mm;font-family:sans-serif;color:#000;padding:1.5mm 2mm;box-sizing:border-box">' +
+      '<div style="width:70mm;font-family:sans-serif;color:#000;padding:1.5mm 2mm;box-sizing:border-box">' +
         customerPart +
         '<hr style="border:none;border-top:1px dashed #000;margin:0.8mm 0">' +
         '<div style="font-size:10px;font-weight:bold;margin-bottom:0.3mm">営業日時</div>' +
@@ -807,7 +807,7 @@ function buildReceiptHTML(order, isTicket){
     });
 
     html =
-      '<div style="width:75mm;font-family:sans-serif;color:#000;padding:1.5mm 2mm;box-sizing:border-box">' +
+      '<div style="width:70mm;font-family:sans-serif;color:#000;padding:1.5mm 2mm;box-sizing:border-box">' +
         ticketPart +
         '<hr style="border:none;border-top:1px dashed #000;margin:0.8mm 0">' +
         rktRows +
@@ -829,7 +829,7 @@ function printOrder(order){
     '<!DOCTYPE html><html><head>' +
     '<meta charset="UTF-8">' +
     '<style>' +
-    '@page{margin:0;size:75mm auto}' +
+    '@page{margin:0;size:70mm auto}' +
     'body{margin:0;padding:0;background:#fff}' +
     '.page{page-break-after:always}' +
     '.page:last-child{page-break-after:auto}' +
