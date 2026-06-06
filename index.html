@@ -758,52 +758,58 @@ function buildReceiptHTML(order, isTicket){
 
   // 伝票用（TELあり）
   var ticketPart =
-    '<div style="font-size:13px;font-weight:bold;text-align:center;border:1px solid #000;padding:1mm 0;margin-bottom:1mm">【 伝 票 】</div>' +
-    '<div style="font-size:16px;font-weight:bold;margin-bottom:0.5mm">' + order.customer + ' 様</div>' +
-    (order.tel ? '<div style="font-size:11px;margin-bottom:1mm">TEL: ' + order.tel + '</div>' : '') +
-    '<hr style="border:none;border-top:1px dashed #000;margin:1mm 0">' +
-    '<div style="font-size:9px;color:#000;margin-bottom:0.5mm">仕上がり予定日時</div>' +
-    '<div style="font-size:17px;font-weight:bold;margin-bottom:1mm">' + due + '</div>';
+    '<div style="font-size:12px;font-weight:bold;border:1px solid #000;padding:0.5mm 2mm 0.5mm 2mm;margin-bottom:0.8mm;display:flex;justify-content:space-between;align-items:center">' +
+    '  <span>【 伝 票 】</span>' +
+    '  <span style="font-size:9px;font-weight:normal">#' + order.id.slice(-6) + '</span>' +
+    '</div>' +
+    '<div style="font-size:14px;font-weight:bold;margin-bottom:0.3mm">' + order.customer + ' 様</div>' +
+    (order.tel ? '<div style="font-size:10px;margin-bottom:0.5mm">TEL: ' + order.tel + '</div>' : '') +
+    '<hr style="border:none;border-top:1px dashed #000;margin:0.8mm 0">' +
+    '<div style="font-size:9px;color:#000;margin-bottom:0.3mm">仕上がり予定日時</div>' +
+    '<div style="font-size:15px;font-weight:bold;margin-bottom:0.8mm">' + due + '</div>';
   // お客様控え用（TELなし）
   var customerPart =
-    '<div style="font-size:13px;font-weight:bold;text-align:center;border:1px solid #000;padding:1mm 0;margin-bottom:1mm">★ お客様控え</div>' +
-    '<div style="font-size:16px;font-weight:bold;margin-bottom:0.5mm">' + order.customer + ' 様</div>' +
-    '<hr style="border:none;border-top:1px dashed #000;margin:1mm 0">' +
-    '<div style="font-size:9px;color:#000;margin-bottom:0.5mm">仕上がり予定日時</div>' +
-    '<div style="font-size:17px;font-weight:bold;margin-bottom:1mm">' + due + '</div>';
+    '<div style="font-size:12px;font-weight:bold;border:1px solid #000;padding:0.5mm 2mm 0.5mm 2mm;margin-bottom:0.8mm;display:flex;justify-content:space-between;align-items:center">' +
+    '  <span>★ お客様控え</span>' +
+    '  <span style="font-size:9px;font-weight:normal">#' + order.id.slice(-6) + '</span>' +
+    '</div>' +
+    '<div style="font-size:14px;font-weight:bold;margin-bottom:0.3mm">' + order.customer + ' 様</div>' +
+    '<hr style="border:none;border-top:1px dashed #000;margin:0.8mm 0">' +
+    '<div style="font-size:9px;color:#000;margin-bottom:0.3mm">仕上がり予定日時</div>' +
+    '<div style="font-size:15px;font-weight:bold;margin-bottom:0.8mm">' + due + '</div>';
 
   if(!isTicket){
     // お客様控え：シンプル
     html =
-      '<div style="width:80mm;font-family:sans-serif;color:#000;padding:2mm 3mm;box-sizing:border-box">' +
+      '<div style="width:75mm;font-family:sans-serif;color:#000;padding:1.5mm 2mm;box-sizing:border-box">' +
         customerPart +
-        '<hr style="border:none;border-top:1px dashed #000;margin:1mm 0">' +
-        '<div style="font-size:10px;font-weight:bold;margin-bottom:0.5mm">営業日時</div>' +
+        '<hr style="border:none;border-top:1px dashed #000;margin:0.8mm 0">' +
+        '<div style="font-size:10px;font-weight:bold;margin-bottom:0.3mm">営業日時</div>' +
         '<div style="font-size:10px;line-height:1.6">' +
-          '平日　12:00～20:00　土日祝　10:00～18:00' +
+          '平日 12:00-20:00　土日祝 10:00-18:00<br>定休日　火曜日' +
         '</div>' +
       '</div>';
   } else {
     // 伝票：全ラケット情報を1枚に
     var rktRows = '';
     rackets.forEach(function(r, i){
-      if(i > 0) rktRows += '<hr style="border:none;border-top:1px dashed #000;margin:0.8mm 0">';
-      rktRows +=
-        '<div style="font-size:11px;font-weight:bold;margin:0.5mm 0;border-left:3px solid #000;padding-left:2mm">' +
-          (i+1) + '/' + rackets.length + ' ' + (r.racket || '（ラケット名未入力）') +
-        '</div>';
-      if(r.gutType || r.gutColor)
-        rktRows += '<div style="font-size:10px;margin-bottom:0.3mm">ガット: ' + (r.gutType||'') + (r.gutColor ? ' / ' + r.gutColor : '') + '</div>';
-      if(r.tension)
-        rktRows += '<div style="font-size:10px;margin-bottom:0.3mm">テンション: ' + r.tension + 'lb</div>';
-      if(r.gutSource)
-        rktRows += '<div style="font-size:10px;margin-bottom:0.3mm">(' + r.gutSource + ')</div>';
+      if(i > 0) rktRows += '<hr style="border:none;border-top:1px dashed #000;margin:0.5mm 0">';
+      // 1行目: 番号+ラケット名
+      rktRows += '<div style="font-size:10px;font-weight:bold;margin:0.3mm 0;border-left:3px solid #000;padding-left:1.5mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' +
+        (i+1) + '/' + rackets.length + ' ' + (r.racket || '(no name)') + '</div>';
+      // 2行目: ガット/カラー + テンション + 区分 を1行にまとめる
+      var line2 = [];
+      if(r.gutType || r.gutColor) line2.push((r.gutType||'') + (r.gutColor ? '/' + r.gutColor : ''));
+      if(r.tension) line2.push(r.tension + 'lb');
+      if(r.gutSource) line2.push('(' + r.gutSource + ')');
+      if(line2.length > 0)
+        rktRows += '<div style="font-size:9px;margin-bottom:0.3mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + line2.join(' ') + '</div>';
     });
 
     html =
-      '<div style="width:80mm;font-family:sans-serif;color:#000;padding:2mm 3mm;box-sizing:border-box">' +
+      '<div style="width:75mm;font-family:sans-serif;color:#000;padding:1.5mm 2mm;box-sizing:border-box">' +
         ticketPart +
-        '<hr style="border:none;border-top:1px dashed #000;margin:1mm 0">' +
+        '<hr style="border:none;border-top:1px dashed #000;margin:0.8mm 0">' +
         rktRows +
       '</div>';
   }
@@ -823,7 +829,7 @@ function printOrder(order){
     '<!DOCTYPE html><html><head>' +
     '<meta charset="UTF-8">' +
     '<style>' +
-    '@page{margin:0;size:80mm auto}' +
+    '@page{margin:0;size:75mm auto}' +
     'body{margin:0;padding:0;background:#fff}' +
     '.page{page-break-after:always}' +
     '.page:last-child{page-break-after:auto}' +
