@@ -758,15 +758,15 @@ function buildReceiptHTML(order, isTicket){
 
   // 伝票用（TELあり）
   var ticketPart =
-    '<div style="font-size:12px;font-weight:bold;border:1px solid #000;padding:0.5mm 2mm 0.5mm 2mm;margin-bottom:0.8mm;display:flex;justify-content:space-between;align-items:center">' +
+    '<div style="font-size:9px;font-weight:bold;border:1px solid #000;padding:0.3mm 1.5mm;margin-bottom:0.5mm;display:flex;justify-content:space-between;align-items:center">' +
     '  <span>【 伝 票 】</span>' +
     '  <span style="font-size:9px;font-weight:normal">#' + order.id.slice(-6) + '</span>' +
     '</div>' +
-    '<div style="font-size:14px;font-weight:bold;margin-bottom:0.3mm">' + order.customer + ' 様</div>' +
-    (order.tel ? '<div style="font-size:10px;margin-bottom:0.5mm">TEL: ' + order.tel + '</div>' : '') +
-    '<hr style="border:none;border-top:1px dashed #000;margin:0.8mm 0">' +
-    '<div style="font-size:9px;color:#000;margin-bottom:0.3mm">仕上がり予定日時</div>' +
-    '<div style="font-size:15px;font-weight:bold;margin-bottom:0.8mm">' + due + '</div>';
+    '<div style="font-size:10px;font-weight:bold;margin-bottom:0.2mm">' + order.customer + ' 様</div>' +
+    (order.tel ? '<div style="font-size:8px;margin-bottom:0.3mm">TEL: ' + order.tel + '</div>' : '') +
+    '<hr style="border:none;border-top:1px dashed #000;margin:0.5mm 0">' +
+    '<div style="font-size:7px;color:#000;margin-bottom:0.2mm">仕上がり予定日時</div>' +
+    '<div style="font-size:11px;font-weight:bold;margin-bottom:0.5mm">' + due + '</div>';
   // お客様控え用（TELなし）
   var customerPart =
     '<div style="font-size:12px;font-weight:bold;border:1px solid #000;padding:0.5mm 2mm 0.5mm 2mm;margin-bottom:0.8mm;display:flex;justify-content:space-between;align-items:center">' +
@@ -781,7 +781,7 @@ function buildReceiptHTML(order, isTicket){
   if(!isTicket){
     // お客様控え：シンプル
     html =
-      '<div style="width:70mm;font-family:sans-serif;color:#000;padding:1.5mm 2mm;box-sizing:border-box">' +
+      '<div style="width:65mm;font-family:sans-serif;color:#000;padding:1.5mm 2mm;box-sizing:border-box">' +
         customerPart +
         '<hr style="border:none;border-top:1px dashed #000;margin:0.8mm 0">' +
         '<div style="font-size:10px;font-weight:bold;margin-bottom:0.3mm">営業日時</div>' +
@@ -793,9 +793,9 @@ function buildReceiptHTML(order, isTicket){
     // 伝票：全ラケット情報を1枚に
     var rktRows = '';
     rackets.forEach(function(r, i){
-      if(i > 0) rktRows += '<hr style="border:none;border-top:1px dashed #000;margin:0.5mm 0">';
+      if(i > 0) rktRows += '<hr style="border:none;border-top:1px dashed #000;margin:0.3mm 0">';
       // 1行目: 番号+ラケット名
-      rktRows += '<div style="font-size:10px;font-weight:bold;margin:0.3mm 0;border-left:3px solid #000;padding-left:1.5mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' +
+      rktRows += '<div style="font-size:8px;font-weight:bold;margin:0.2mm 0;border-left:2px solid #000;padding-left:1mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' +
         (i+1) + '/' + rackets.length + ' ' + (r.racket || '(no name)') + '</div>';
       // 2行目: ガット/カラー + テンション + 区分 を1行にまとめる
       var line2 = [];
@@ -803,13 +803,13 @@ function buildReceiptHTML(order, isTicket){
       if(r.tension) line2.push(r.tension + 'lb');
       if(r.gutSource) line2.push('(' + r.gutSource + ')');
       if(line2.length > 0)
-        rktRows += '<div style="font-size:9px;margin-bottom:0.3mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + line2.join(' ') + '</div>';
+        rktRows += '<div style="font-size:7px;margin-bottom:0.2mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + line2.join(' ') + '</div>';
     });
 
     html =
-      '<div style="width:70mm;font-family:sans-serif;color:#000;padding:1.5mm 2mm;box-sizing:border-box">' +
+      '<div style="width:65mm;font-family:sans-serif;color:#000;padding:0.8mm 1.5mm;box-sizing:border-box">' +
         ticketPart +
-        '<hr style="border:none;border-top:1px dashed #000;margin:0.8mm 0">' +
+        '<hr style="border:none;border-top:1px dashed #000;margin:0.4mm 0">' +
         rktRows +
       '</div>';
   }
@@ -829,7 +829,7 @@ function printOrder(order){
     '<!DOCTYPE html><html><head>' +
     '<meta charset="UTF-8">' +
     '<style>' +
-    '@page{margin:0;size:70mm auto}' +
+    '@page{margin:0;size:65mm auto}' +
     'body{margin:0;padding:0;background:#fff}' +
     '.page{page-break-after:always}' +
     '.page:last-child{page-break-after:auto}' +
