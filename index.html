@@ -391,7 +391,17 @@ function renderRacketPanel(id,data){
       rgRow(id+'-grip','グリップテープ',['右巻き','左巻き','巻き無し'],d.gripTape||'')+
     '</div>'+
     '<div class="g2">'+
-      rgRow(id+'-grommet','グロメット',['全交換','一部交換','交換無し'],d.grommet||'')+
+      (function(){
+      return '<div class="fg">'+
+        '<label class="fl">グロメット <span class="req">*</span></label>'+
+        '<div class="rg" id="'+id+'-grommet" data-name="'+id+'-grommet"></div>'+
+        '<div class="emsg" id="err-'+id+'-grommet">選択してください</div>'+
+        '<div class="grommet-partial-wrap" id="'+id+'-grommetpartwrap" style="display:none;margin-top:6px">'+
+          '<input type="text" id="'+id+'-grommetpart" placeholder="例：3T, 9H など交換箇所を記入" style="font-size:13px">'+
+          '<div class="emsg" id="err-'+id+'-grommetpart">交換箇所を入力してください</div>'+
+        '</div>'+
+      '</div>';
+    })()+
       (function(){
       return '<div class="fg">'+
         '<label class="fl">ステンシル <span class="req">*</span></label>'+
@@ -414,6 +424,7 @@ function renderRacketPanel(id,data){
   setupCaseListeners(id, d);
   makeRG(id+'-grip',['右巻き','左巻き','巻き無し'],d.gripTape||'');
   makeRG(id+'-grommet',['全交換','一部交換','交換無し'],d.grommet||'');
+  setupGrommetListener(id, d);
   makeRG(id+'-stencil',['赤','黒','無し'],d.stencil||'');
   setupStencilListeners(id, d);
   makeRG(id+'-deform',['了承済み','未'],d.deform||'',['了承済み']);
@@ -432,6 +443,29 @@ function removeRacket(id){
 }
 
 
+
+function setupGrommetListener(id, d){
+  var el = document.getElementById(id+'-grommet');
+  if(!el) return;
+  var wrap = document.getElementById(id+'-grommetpartwrap');
+  // 初期表示（復元時）
+  if(d.grommetPart && wrap) wrap.style.display = 'block';
+  // 初期値セット
+  var inp = document.getElementById(id+'-grommetpart');
+  if(inp && d.grommetPart) inp.value = d.grommetPart;
+  // ラジオ変更リスナー（イベント委譲）
+  el.addEventListener('change', function(e){
+    if(!e.target || e.target.type !== 'radio') return;
+    if(!wrap) return;
+    if(e.target.value === '一部交換'){
+      wrap.style.display = 'block';
+    } else {
+      wrap.style.display = 'none';
+      if(inp){ inp.value = ''; inp.classList.remove('ferr'); }
+      clearErr(id+'-grommetpart');
+    }
+  });
+}
 var STENCIL_MAKERS=['リーニン','ヨネックス','ビクター'];
 
 function setupStencilListeners(id, d){
@@ -663,7 +697,17 @@ function getRacketData(id){
     })(),
     caseType:getCaseValue(id).type,caseOther:getCaseValue(id).other,caseColor:getCaseValue(id).color,caseColorOther:getCaseValue(id).colorOther,
     gripTape:(function(){var v=getRG(id+'-grip');return v==='巻き無し'?'':v;}()),
-    grommet:(function(){var v=getRG(id+'-grommet');return v==='交換無し'?'':v;}()),
+    grommet:(function(){
+      var v=getRG(id+'-grommet');
+      if(v==='交換無し')return'';
+      if(v==='一部交換'){
+        var part=document.getElementById(id+'-grommetpart');
+        var pval=part?part.value.trim():'';
+        return pval?'一部交換（'+pval+'）':'一部交換';
+      }
+      return v;
+    }()),
+    grommetPart:(function(){var inp=document.getElementById(id+'-grommetpart');return inp?inp.value.trim():''}()),
     stencil:(function(){var sv=getStencilValue(id);return sv.color==='無し'||!sv.color?'':sv.color+(sv.maker?'／'+sv.maker:'');}()),
     stencilMaker:getStencilValue(id).maker,
     deform:(function(){var v=getRG(id+'-deform');return v==='未'?'':v;}()),
@@ -676,6 +720,16 @@ function validateRacket(id){
   fields.forEach(function(fid){if(!chkRG(fid))ok=false;});
   if(!validateCase(id))ok=false;
   if(!validateStencil(id))ok=false;
+  // グロメット一部交換の場合、交換箇所入力を必須チェック
+  if(getRG(id+'-grommet')==='一部交換'){
+    var inp=document.getElementById(id+'-grommetpart');
+    var em=document.getElementById('err-'+id+'-grommetpart');
+    if(!inp||!inp.value.trim()){
+      if(inp)inp.classList.add('ferr');if(em)em.classList.add('show');ok=false;
+    } else {
+      if(inp)inp.classList.remove('ferr');if(em)em.classList.remove('show');
+    }
+  }
   return ok;
 }
 function initForm(){
