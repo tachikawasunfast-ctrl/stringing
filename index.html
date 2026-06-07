@@ -186,7 +186,37 @@ textarea{resize:vertical;min-height:60px}
       <div class="st">受付・仕上がり日時</div>
       <div class="g2">
         <div class="fg"><label class="fl">受付日時 <span class="req">*</span></label><input type="datetime-local" id="f-received"></div>
-        <div class="fg"><label class="fl">仕上がり予定日時</label><input type="datetime-local" id="f-due"></div>
+        <div class="fg">
+          <label class="fl">仕上がり予定日時 <span class="req">*</span></label>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <input type="date" id="f-due-date" style="flex:1;min-width:120px">
+            <select id="f-due-hour" style="width:70px;padding:8px 6px;border:0.5px solid rgba(0,0,0,.2);border-radius:8px;font-size:14px;background:#fff;font-family:inherit">
+              <option value="">時</option>
+              <option value="未定">未定</option>
+              <option value="10">10時</option>
+              <option value="11">11時</option>
+              <option value="12">12時</option>
+              <option value="13">13時</option>
+              <option value="14">14時</option>
+              <option value="15">15時</option>
+              <option value="16">16時</option>
+              <option value="17">17時</option>
+              <option value="18">18時</option>
+              <option value="19">19時</option>
+              <option value="20">20時</option>
+            </select>
+            <select id="f-due-min" style="width:70px;padding:8px 6px;border:0.5px solid rgba(0,0,0,.2);border-radius:8px;font-size:14px;background:#fff;font-family:inherit">
+              <option value="">分</option>
+              <option value="00">00分</option>
+              <option value="10">10分</option>
+              <option value="20">20分</option>
+              <option value="30">30分</option>
+              <option value="40">40分</option>
+              <option value="50">50分</option>
+            </select>
+          </div>
+          <div class="emsg" id="err-due">仕上がり予定日時を入力してください</div>
+        </div>
       </div>
     </div>
     <div class="sc">
@@ -353,13 +383,13 @@ function renderRacketPanel(id,data){
       (rackets.length>1?'<button type="button" class="btn btn-d" onclick="removeRacket(\''+id+'\')">削除</button>':'')+
     '</div>'+
     '<div class="g2">'+
-      '<div class="fg"><label class="fl">ラケット名</label><input type="text" id="'+id+'-racket" placeholder="例：YONEX EZONE 98" value="'+(d.racket||'')+'"></div>'+
+      '<div class="fg"><label class="fl">ラケット名 <span class="req">*</span></label><input type="text" id="'+id+'-racket" placeholder="例：YONEX EZONE 98" value="'+(d.racket||'')+'"><div class="emsg" id="err-'+id+'-racket">ラケット名を入力してください</div></div>'+
     '</div>'+
     rgRow(id+'-rackettype','ラケット区分',['新規購入','持ち込み'],d.racketType||'')+
     '<div class="g3">'+
-      '<div class="fg"><label class="fl">ガットの種類</label><input type="text" id="'+id+'-guttype" placeholder="例：ポリツアーエア" value="'+(d.gutType||'')+'"></div>'+
-      '<div class="fg"><label class="fl">ガットカラー</label><input type="text" id="'+id+'-gutcolor" placeholder="例：イエロー" value="'+(d.gutColor||'')+'"></div>'+
-      '<div class="fg"><label class="fl">テンション（lb）</label><input type="number" id="'+id+'-tension" min="10" max="70" step="0.5" placeholder="例：50" value="'+(d.tension||'')+'"></div>'+
+      '<div class="fg"><label class="fl">ガットの種類 <span class="req">*</span></label><input type="text" id="'+id+'-guttype" placeholder="例：ポリツアーエア" value="'+(d.gutType||'')+'"><div class="emsg" id="err-'+id+'-guttype">ガットの種類を入力してください</div></div>'+
+      '<div class="fg"><label class="fl">ガットカラー <span class="req">*</span></label><input type="text" id="'+id+'-gutcolor" placeholder="例：イエロー" value="'+(d.gutColor||'')+'"><div class="emsg" id="err-'+id+'-gutcolor">ガットカラーを入力してください</div></div>'+
+      '<div class="fg"><label class="fl">テンション（lb） <span class="req">*</span></label><input type="number" id="'+id+'-tension" min="10" max="70" step="0.5" placeholder="例：50" value="'+(d.tension||'')+'"><div class="emsg" id="err-'+id+'-tension">テンションを入力してください</div></div>'+
     '</div>'+
     rgRow(id+'-gutsource','ガット区分',GUT_OPTS,d.gutSource||'')+
     '<div class="g2">'+
@@ -718,6 +748,22 @@ function validateRacket(id){
   var fields=[id+'-rackettype',id+'-gutsource',id+'-grip',id+'-grommet',id+'-deform'];
   var ok=true;
   fields.forEach(function(fid){if(!chkRG(fid))ok=false;});
+  // テキスト入力の必須チェック
+  var txtFields=[
+    {fid:id+'-racket',  eid:'err-'+id+'-racket'},
+    {fid:id+'-guttype', eid:'err-'+id+'-guttype'},
+    {fid:id+'-gutcolor',eid:'err-'+id+'-gutcolor'},
+    {fid:id+'-tension', eid:'err-'+id+'-tension'},
+  ];
+  txtFields.forEach(function(f){
+    var el=document.getElementById(f.fid);
+    var em=document.getElementById(f.eid);
+    if(!el||!el.value.trim()){
+      if(el)el.classList.add('ferr');if(em)em.classList.add('show');ok=false;
+    } else {
+      if(el)el.classList.remove('ferr');if(em)em.classList.remove('show');
+    }
+  });
   if(!validateCase(id))ok=false;
   if(!validateStencil(id))ok=false;
   // グロメット一部交換の場合、交換箇所入力を必須チェック
@@ -738,7 +784,9 @@ function initForm(){
 }
 function resetForm(){
   document.getElementById('f-received').value=toLocalDt(new Date());
-  document.getElementById('f-due').value='';
+  document.getElementById('f-due-date').value='';
+  var dh=document.getElementById('f-due-hour');if(dh)dh.value='';
+  var dm=document.getElementById('f-due-min');if(dm)dm.value='';
   var c=document.getElementById('f-customer');c.value='';c.classList.remove('ferr');
   var tEl=document.getElementById('f-tel');if(tEl)tEl.value='';
   document.getElementById('err-customer').classList.remove('show');
@@ -752,6 +800,23 @@ function submitForm(e){
   var cust=document.getElementById('f-customer');
   if(!cust.value.trim()){cust.classList.add('ferr');document.getElementById('err-customer').classList.add('show');valid=false;}
   else{cust.classList.remove('ferr');document.getElementById('err-customer').classList.remove('show');}
+  // 仕上がり予定日時バリデーション
+  var dueDate=document.getElementById('f-due-date');
+  var dueHour=document.getElementById('f-due-hour');
+  var dueMin=document.getElementById('f-due-min');
+  var dueEm=document.getElementById('err-due');
+  var dueDateVal=dueDate?dueDate.value:'';
+  var dueHourVal=dueHour?dueHour.value:'';
+  var dueMinVal=dueMin?dueMin.value:'';
+  var dueTimeOk=dueHourVal==='未定'||(dueHourVal&&dueMinVal);
+  if(!dueDateVal||!dueTimeOk){
+    if(dueDate)dueDate.classList.add('ferr');
+    if(dueEm)dueEm.classList.add('show');
+    valid=false;
+  } else {
+    if(dueDate)dueDate.classList.remove('ferr');
+    if(dueEm)dueEm.classList.remove('show');
+  }
   if(!chkRG('rg-payment'))valid=false;
   var errRkts=[];
   rackets.forEach(function(id,i){if(!validateRacket(id))errRkts.push(i);});
@@ -773,7 +838,7 @@ function submitForm(e){
   document.getElementById('errbanner').classList.remove('show');
   var rktData=rackets.map(function(id){return getRacketData(id);});
   var tel=document.getElementById('f-tel')?document.getElementById('f-tel').value.trim():'';
-  var order={id:Date.now().toString(),createdAt:new Date().toISOString(),received:document.getElementById('f-received').value,due:document.getElementById('f-due').value,customer:cust.value.trim(),tel:tel,payment:getRG('rg-payment'),rackets:rktData};
+  var order={id:Date.now().toString(),createdAt:new Date().toISOString(),received:document.getElementById('f-received').value,due:getDueValue(),dueTime:getDueTimeLabel(),customer:cust.value.trim(),tel:tel,payment:getRG('rg-payment'),rackets:rktData};
   var orders=getOrders();orders.unshift(order);saveOrders(orders);
   pushToSheets([order],true);
   showToast('受付登録しました！（ラケット'+rktData.length+'本）');
@@ -806,7 +871,7 @@ function fmtDtFull(dt){
 }
 
 function buildReceiptHTML(order, isTicket){
-  var due = fmtDtFull(order.due);
+  var due = fmtDtFull(order.due, order.dueTime);
   var rackets = order.rackets || [];
   var html = '';
 
@@ -816,7 +881,7 @@ function buildReceiptHTML(order, isTicket){
     '  <span>【 伝 票 】</span>' +
     '  <span style="font-size:9px;font-weight:normal">#' + order.id.slice(-6) + '</span>' +
     '</div>' +
-    '<div style="font-size:10px;font-weight:bold;margin-bottom:0.2mm">' + order.customer + ' 様</div>' +
+    '<div style="font-size:14px;font-weight:bold;margin-bottom:0.2mm">' + order.customer + ' 様</div>' +
     (order.tel ? '<div style="font-size:8px;margin-bottom:0.3mm">TEL: ' + order.tel + '</div>' : '') +
     '<hr style="border:none;border-top:1px dashed #000;margin:0.5mm 0">' +
     '<div style="font-size:7px;color:#000;margin-bottom:0.2mm">仕上がり予定日時</div>' +
@@ -953,6 +1018,23 @@ document.addEventListener('click',function(e){
   if(modal&&e.target===modal)closeAddModal();
 });
 
+
+function getDueValue(){
+  var d = document.getElementById('f-due-date') ? document.getElementById('f-due-date').value : '';
+  var h = document.getElementById('f-due-hour') ? document.getElementById('f-due-hour').value : '';
+  var m = document.getElementById('f-due-min') ? document.getElementById('f-due-min').value : '';
+  if(!d) return '';
+  if(h === '未定') return d + 'T00:00';
+  if(!h || !m) return d + 'T00:00';
+  return d + 'T' + String(h).padStart(2,'0') + ':' + m;
+}
+function getDueTimeLabel(){
+  var h = document.getElementById('f-due-hour') ? document.getElementById('f-due-hour').value : '';
+  var m = document.getElementById('f-due-min') ? document.getElementById('f-due-min').value : '';
+  if(h === '未定') return '未定';
+  if(h && m) return h + ':' + m;
+  return '';
+}
 function autoDeleteOldTel(){
   var orders = getOrders();
   var now = Date.now();
@@ -971,7 +1053,12 @@ function autoDeleteOldTel(){
 }
 function getOrders(){try{return JSON.parse(localStorage.getItem(STORE_KEY)||'[]');}catch(e){return[];}}
 function saveOrders(o){localStorage.setItem(STORE_KEY,JSON.stringify(o));}
-function fmtDt(dt){if(!dt)return'';var d=new Date(dt);return d.toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});}
+function fmtDt(dt,dueTime){if(!dt)return'';
+  var d=new Date(dt);
+  var base=(d.getMonth()+1)+'/'+(d.getDate());
+  if(dueTime==='未定'||(!dueTime&&d.getHours()===0&&d.getMinutes()===0))return base+' 時刻未定';
+  return base+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
 function showTab(name,el){
   ['form','list','settings'].forEach(function(t){document.getElementById('tab-'+t).style.display=(t===name)?'':'none';});
   document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});el.classList.add('active');
@@ -1014,7 +1101,7 @@ function renderList(){
     return'<div class="oc">'+
       '<div class="oh"><div>'+
         '<div class="on2">'+o.customer+' <span class="rcnt">'+((o.rackets||[]).length)+'</span></div>'+
-        '<div class="om">受付：'+fmtDt(o.received)+'　仕上がり予定：'+(fmtDt(o.due)||'未設定')+'</div>'+
+        '<div class="om">受付：'+fmtDt(o.received)+'　仕上がり予定：'+(fmtDt(o.due,o.dueTime)||'未設定')+'</div>'+
       '</div><div class="bgs"><span class="bp '+(o.payment==='会計済み'?'bpaid':'bunpaid')+'">'+o.payment+'</span></div></div>'+
       '<div class="rkt-list">'+ri+'</div>'+
       '<div class="oa">'+
