@@ -183,6 +183,12 @@ textarea{resize:vertical;min-height:60px}
   <div class="errbanner" id="errbanner">選択されていない必須項目があります。赤くなっている箇所を確認してください。</div>
   <form id="reception-form" onsubmit="submitForm(event)" novalidate>
     <div class="sc">
+      <div class="st">ラケット・ガット情報</div>
+      <div class="racket-tabs" id="racket-tabs"></div>
+      <div id="racket-panels"></div>
+      <div style="margin-top:.5rem"><button type="button" class="add-racket-btn" onclick="openAddModal()">＋ ラケットを追加</button></div>
+    </div>
+    <div class="sc">
       <div class="st">受付・仕上がり日時</div>
       <div class="g2">
         <div class="fg"><label class="fl">受付日時 <span class="req">*</span></label><input type="datetime-local" id="f-received"></div>
@@ -234,12 +240,6 @@ textarea{resize:vertical;min-height:60px}
       </div>
     </div>
     <div class="sc">
-      <div class="st">ラケット・ガット情報</div>
-      <div class="racket-tabs" id="racket-tabs"></div>
-      <div id="racket-panels"></div>
-      <div style="margin-top:.5rem"><button type="button" class="add-racket-btn" onclick="openAddModal()">＋ ラケットを追加</button></div>
-    </div>
-    <div class="sc">
       <div class="st">会計</div>
       <div class="fg">
         <label class="fl">会計状況 <span class="req">*</span></label>
@@ -251,7 +251,8 @@ textarea{resize:vertical;min-height:60px}
       <button type="button" class="btn btn-s" onclick="resetForm()">リセット</button>
       <button type="submit" class="btn btn-p">受付登録 → Sheetsに保存</button>
     </div>
-  </form>
+  
+</form>
 </div>
 
 <div id="tab-list" style="display:none">
