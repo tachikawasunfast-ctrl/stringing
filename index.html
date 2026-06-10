@@ -845,6 +845,7 @@ function submitForm(e){
   showToast('受付登録しました！（ラケット'+rktData.length+'本）');
   printOrder(order);
   resetForm();
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 function fmtDtFull(dt){
