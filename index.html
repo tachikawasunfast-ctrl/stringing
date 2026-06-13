@@ -918,13 +918,22 @@ function buildReceiptHTML(order, isTicket){
       // 1行目: 番号+ラケット名
       rktRows += '<div style="font-size:8px;font-weight:bold;margin:0.2mm 0;border-left:2px solid #000;padding-left:1mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' +
         (i+1) + '/' + rackets.length + ' ' + (r.racket || '(no name)') + '</div>';
-      // 2行目: ガット/カラー + テンション + 区分 を1行にまとめる
+      // 2行目: ガット/カラー + テンション + 区分
       var line2 = [];
       if(r.gutType || r.gutColor) line2.push((r.gutType||'') + (r.gutColor ? '/' + r.gutColor : ''));
       if(r.tension) line2.push(r.tension);
       if(r.gutSource) line2.push('(' + r.gutSource + ')');
       if(line2.length > 0)
         rktRows += '<div style="font-size:7px;margin-bottom:0.2mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + line2.join(' ') + '</div>';
+      // 3行目以降: グリップ・グロメット・ステンシル・備考（値がある場合のみ）
+      var line3 = [];
+      if(r.gripTape) line3.push('Grip:' + r.gripTape);
+      if(r.grommet) line3.push('Grommet:' + r.grommet);
+      if(r.stencil) line3.push('Stencil:' + r.stencil);
+      if(line3.length > 0)
+        rktRows += '<div style="font-size:7px;margin-bottom:0.2mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + line3.join(' / ') + '</div>';
+      if(r.note)
+        rktRows += '<div style="font-size:7px;margin-bottom:0.2mm;white-space:normal;color:#333">※' + r.note + '</div>';
     });
 
     html =
