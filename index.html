@@ -195,7 +195,7 @@ textarea{resize:vertical;min-height:60px}
         <div class="fg">
           <label class="fl">仕上がり予定日時 <span class="req">*</span></label>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-            <input type="date" id="f-due-date" style="flex:1;min-width:120px">
+            <input type="date" id="f-due-date" style="flex:1;min-width:120px" oninput="updateDueDow()"><span id="f-due-dow" style="font-size:14px;font-weight:500;color:#1a3a2a;white-space:nowrap;padding:0 2px"></span>
             <select id="f-due-hour" style="width:70px;padding:8px 6px;border:0.5px solid rgba(0,0,0,.2);border-radius:8px;font-size:14px;background:#fff;font-family:inherit">
               <option value="">時</option>
               <option value="未定">未定</option>
@@ -782,10 +782,17 @@ function validateRacket(id){
 function initForm(){
   makeRG('rg-payment',['会計未','会計済み'],'');
   rackets=[];document.getElementById('racket-panels').innerHTML='';document.getElementById('racket-tabs').innerHTML='';racketCounter=0;addRacket();
+  // 仕上がり予定日時：当日をデフォルトセット
+  var dd=document.getElementById('f-due-date');
+  if(dd)dd.value=toLocalDate(new Date());
+  updateDueDow();
+  // 時刻はリセット（未選択状態に）
+  var dh=document.getElementById('f-due-hour');if(dh)dh.value='';
+  var dm=document.getElementById('f-due-min');if(dm)dm.value='';
 }
 function resetForm(){
   document.getElementById('f-received').value=toLocalDt(new Date());
-  document.getElementById('f-due-date').value='';
+  document.getElementById('f-due-date').value=toLocalDate(new Date());
   var dh=document.getElementById('f-due-hour');if(dh)dh.value='';
   var dm=document.getElementById('f-due-min');if(dm)dm.value='';
   var c=document.getElementById('f-customer');c.value='';c.classList.remove('ferr');
@@ -795,6 +802,19 @@ function resetForm(){
   initForm();
 }
 function toLocalDt(d){function p(n){return String(n).padStart(2,'0');}return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes());}
+
+function updateDueDow(){
+  var el=document.getElementById('f-due-date');
+  var dow=document.getElementById('f-due-dow');
+  if(!el||!dow)return;
+  if(!el.value){dow.textContent='';return;}
+  var d=new Date(el.value+'T00:00');
+  var days=['（日）','（月）','（火）','（水）','（木）','（金）','（土）'];
+  dow.textContent=days[d.getDay()];
+  // 土日で色変え
+  dow.style.color=d.getDay()===0?'#c0392b':d.getDay()===6?'#1a3a8a':'#1a3a2a';
+}
+function toLocalDate(d){function p(n){return String(n).padStart(2,'0');}return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
 function submitForm(e){
   e.preventDefault();
   var valid=true;
@@ -1161,6 +1181,8 @@ function showToast(msg,isErr){var t=document.getElementById('toast');t.textConte
 autoDeleteOldTel();
 initForm();
 document.getElementById('f-received').value=toLocalDt(new Date());
+document.getElementById('f-due-date').value=toLocalDate(new Date());
+updateDueDow();
 </script>
 </body>
 </html>
