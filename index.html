@@ -363,6 +363,13 @@ function getRG(containerId){
   var c=el.querySelector('input[type=radio]:checked');
   return c?c.value:'';
 }
+
+function clearErr(id){
+  var em=document.getElementById('err-'+id);
+  var el=document.getElementById(id);
+  if(em)em.classList.remove('show');
+  if(el)el.classList.remove('gerr','ferr');
+}
 function chkRG(containerId){
   var v=getRG(containerId);
   var el=document.getElementById(containerId);
@@ -455,7 +462,12 @@ function renderRacketPanel(id,data){
   makeRG(id+'-grip',['右巻き','左巻き','巻き無し'],d.gripTape||'');
   makeRG(id+'-grommet',['全交換','一部交換','交換無し'],d.grommet||'');
   setupGrommetListener(id, d);
-  makeRG(id+'-stencil',['赤','黒','無し'],d.stencil||'');
+  makeRG(id+'-stencil',['赤','黒','無し'],(function(){
+    var s=d.stencil||'';
+    if(s.indexOf('赤')===0)return'赤';
+    if(s.indexOf('黒')===0)return'黒';
+    return s;
+  })());
   setupStencilListeners(id, d);
   makeRG(id+'-deform',['了承済み','未'],d.deform||'',['了承済み']);
 }
@@ -515,9 +527,9 @@ function setupStencilListeners(id, d){
       }
     });
   });
-  // 初期表示（データ復元時）
+  // 初期表示（データ復元時）：複合文字列（例：赤／ヨネックス）にも対応
   var sv=d.stencil||'';
-  if(sv==='赤'||sv==='黒') subEl.classList.add('show');
+  if(sv.indexOf('赤')===0||sv.indexOf('黒')===0) subEl.classList.add('show');
 }
 function validateStencil(id){
   if(!chkRG(id+'-stencil'))return false;
@@ -1122,6 +1134,9 @@ function addRacketCopy(){
   var srcId=sel.value;
   if(!srcId){closeAddModal();return;}
   var data=getRacketData(srcId);
+  // ケース情報はコピーしない（毎回個別に入力する）
+  data.caseKeeping='';
+  data.cases=[];
   closeAddModal();
   addRacket(data);
   scrollToRacketSection();
