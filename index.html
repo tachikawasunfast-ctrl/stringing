@@ -342,6 +342,21 @@ function makeRG(containerId,opts,defVal,warnVals){
     el.appendChild(lbl);
   });
 }
+
+function setRGValue(containerId, val){
+  var el = document.getElementById(containerId);
+  if(!el) return;
+  el.querySelectorAll('input[type=radio]').forEach(function(inp){
+    var lbl = inp.parentElement;
+    if(inp.value === val){
+      inp.checked = true;
+      lbl.classList.add('sel');
+    } else {
+      inp.checked = false;
+      lbl.classList.remove('sel');
+    }
+  });
+}
 function getRG(containerId){
   var el=document.getElementById(containerId);
   if(!el)return'';
@@ -394,31 +409,15 @@ function renderRacketPanel(id,data){
     '</div>'+
     rgRow(id+'-gutsource','ガット区分',GUT_OPTS,d.gutSource||'')+
     '<div class="g2">'+
-      (function(){
-      return '<div class="fg">'+
+      '<div class="fg">'+
         '<label class="fl">ケース預かり <span class="req">*</span></label>'+
         '<div class="rg" id="'+id+'-case" data-name="'+id+'-case"></div>'+
         '<div class="emsg" id="err-'+id+'-case">選択してください</div>'+
-        '<div class="case-sub" id="'+id+'-casesub">'+
-          '<label class="fl" style="margin-bottom:6px">ケースの種類 <span class="req">*</span></label>'+
-          '<div class="rg" id="'+id+'-casetype" data-name="'+id+'-casetype"></div>'+
-          '<div class="emsg" id="err-'+id+'-casetype">種類を選択してください</div>'+
-          '<div class="case-other-input" id="'+id+'-caseotherwrap">'+
-            '<input type="text" id="'+id+'-caseother" placeholder="ケースの特徴を入力してください" style="margin-top:6px">'+
-            '<div class="emsg" id="err-'+id+'-caseother">特徴を入力してください</div>'+
-          '</div>'+
-          '<div class="case-color-sub" id="'+id+'-casecolorsub">'+
-            '<label class="fl" style="margin-bottom:6px;margin-top:4px">ケースカラー <span class="req">*</span></label>'+
-            '<div class="rg" id="'+id+'-casecolor" data-name="'+id+'-casecolor"></div>'+
-            '<div class="emsg" id="err-'+id+'-casecolor">カラーを選択してください</div>'+
-            '<div class="case-color-other-wrap" id="'+id+'-casecolorowrap">'+
-              '<input type="text" id="'+id+'-casecolorother" placeholder="カラーを入力してください" style="margin-top:6px">'+
-              '<div class="emsg" id="err-'+id+'-casecolorother">カラーを入力してください</div>'+
-            '</div>'+
-          '</div>'+
+        '<div class="case-multi-wrap" id="'+id+'-casemultiwrap" style="display:none;margin-top:8px">'+
+          '<div id="'+id+'-caseitems"></div>'+
+          '<button type="button" class="add-racket-btn" style="margin-top:6px;font-size:12px;padding:5px 10px" onclick="addCaseItem(\''+id+'\')">＋ ケースを追加</button>'+
         '</div>'+
-      '</div>';
-    })()+
+      '</div>'+
       rgRow(id+'-grip','グリップテープ',['右巻き','左巻き','巻き無し'],d.gripTape||'')+
     '</div>'+
     '<div class="g2">'+
@@ -541,126 +540,197 @@ var CASE_TYPES=['リーニン(ソフト)','リーニン(ハード)','ヨネッ�
 var CASE_COLOR_TYPES=['黒','その他'];
 var CASE_TYPES_WITH_COLOR=['リーニン(ソフト)','リーニン(ハード)','ヨネックス(ソフト)','ヨネックス(ハード)'];
 
+// ケース管理: id -> [caseItemId, ...]
+var caseItemsMap = {};
+var caseItemCounter = 0;
+
 function setupCaseListeners(id, d){
   var caseEl=document.getElementById(id+'-case');
-  var subEl=document.getElementById(id+'-casesub');
-  if(!caseEl||!subEl)return;
-  // ケースの種類ラジオを初期化
-  makeRG(id+'-casetype', CASE_TYPES, d.caseType||'');
-  // カラーを初期化
-  makeRG(id+'-casecolor', CASE_COLOR_TYPES, d.caseColor||'');
-  // カラーサブの初期表示
-  if(d.caseType && CASE_TYPES_WITH_COLOR.indexOf(d.caseType)>=0){
-    document.getElementById(id+'-casecolorsub').classList.add('show');
-  }
-  if(d.caseColor==='その他'){
-    document.getElementById(id+'-casecolorowrap').classList.add('show');
-  }
-  // その他入力欄の初期表示
-  if(d.caseType==='その他'){
-    document.getElementById(id+'-caseotherwrap').classList.add('show');
-  }
-  // その他ラジオのリスナー
-  setupCaseTypeListener(id);
-  setupCaseColorListener(id);
+  var wrapEl=document.getElementById(id+'-casemultiwrap');
+  if(!caseEl||!wrapEl)return;
+
+  caseItemsMap[id] = [];
+
   // 預かりあり/なし 変更時
-  caseEl.querySelectorAll('input[type=radio]').forEach(function(inp){
-    inp.addEventListener('change', function(){
-      if(inp.value==='預かりあり'){
-        subEl.classList.add('show');
-      } else {
-        subEl.classList.remove('show');
-        // 種類・入力をリセット
-        makeRG(id+'-casetype', CASE_TYPES, '');
-        var ow=document.getElementById(id+'-caseotherwrap');
-        if(ow)ow.classList.remove('show');
-        var oi=document.getElementById(id+'-caseother');
-        if(oi)oi.value='';
-        clearErr(id+'-casetype');clearErr(id+'-caseother');
-      }
-    });
-  });
-  // 初期表示（データ復元時）
-  if(d.caseKeeping==='預かりあり') subEl.classList.add('show');
-}
-function setupCaseTypeListener(id){
-  var el=document.getElementById(id+'-casetype');
-  if(!el)return;
-  el.querySelectorAll('input[type=radio]').forEach(function(inp){
-    inp.addEventListener('change', function(){
-      var ow=document.getElementById(id+'-caseotherwrap');
-      if(inp.value==='その他'){
-        if(ow)ow.classList.add('show');
-      } else {
-        if(ow)ow.classList.remove('show');
-        var oi=document.getElementById(id+'-caseother');
-        if(oi){oi.value='';oi.classList.remove('ferr');}
-        clearErr(id+'-caseother');
-      }
-      // カラーサブの表示切替
-      var csub=document.getElementById(id+'-casecolorsub');
-      if(csub){
-        if(CASE_TYPES_WITH_COLOR.indexOf(inp.value)>=0){
-          csub.classList.add('show');
-          setupCaseColorListener(id);
-        } else {
-          csub.classList.remove('show');
-          makeRG(id+'-casecolor', CASE_COLOR_TYPES, '');
-          setupCaseColorListener(id);
-          var cowrap=document.getElementById(id+'-casecolorowrap');
-          if(cowrap)cowrap.classList.remove('show');
-          var coi=document.getElementById(id+'-casecolorother');
-          if(coi)coi.value='';
-          clearErr(id+'-casecolor');clearErr(id+'-casecolorother');
-        }
-      }
-    });
-  });
-}
-function setupCaseColorListener(id){
-  var el=document.getElementById(id+'-casecolor');
-  if(!el)return;
-  // イベント委譲：makeRGで再生成後もリスナーが機能する
-  el.addEventListener('change', function(e){
+  caseEl.addEventListener('change', function(e){
     if(!e.target||e.target.type!=='radio')return;
-    var cowrap=document.getElementById(id+'-casecolorowrap');
-    if(!cowrap)return;
-    if(e.target.value==='その他'){
-      cowrap.classList.add('show');
+    if(e.target.value==='預かりあり'){
+      wrapEl.style.display='block';
+      if(caseItemsMap[id].length===0) addCaseItem(id);
     } else {
-      cowrap.classList.remove('show');
-      var coi=document.getElementById(id+'-casecolorother');
+      wrapEl.style.display='none';
+      // 全ケースアイテムをクリア
+      caseItemsMap[id].slice().forEach(function(cid){ removeCaseItem(id, cid, true); });
+    }
+  });
+
+  // 初期表示（データ復元時）：caseKeepingがラジオの完全一致値('預かりあり')か、casesデータがあれば復元
+  var initialCases = d.cases || [];
+  var hadCases = initialCases.length>0;
+  if(d.caseKeeping==='預かりあり' || hadCases){
+    wrapEl.style.display='block';
+    // ラジオボタン自体も「預かりあり」に強制セット（コピー時の複合ラベル対策）
+    setRGValue(id+'-case','預かりあり');
+    if(hadCases){
+      initialCases.forEach(function(c){ addCaseItem(id, c); });
+    } else {
+      addCaseItem(id);
+    }
+  }
+}
+
+function addCaseItem(racketId, data){
+  data = data || {};
+  var cid = 'c'+Date.now()+(caseItemCounter++);
+  if(!caseItemsMap[racketId]) caseItemsMap[racketId]=[];
+  caseItemsMap[racketId].push(cid);
+
+  var container = document.getElementById(racketId+'-caseitems');
+  if(!container) return;
+
+  var n = caseItemsMap[racketId].length;
+  var div = document.createElement('div');
+  div.className = 'case-item-block';
+  div.id = racketId+'-caseitem-'+cid;
+  div.style.cssText = 'border:0.5px solid rgba(0,0,0,.12);border-radius:8px;padding:8px 10px;margin-bottom:6px;background:#f9f9f7';
+  div.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
+      '<span style="font-size:12px;font-weight:500;color:#4a7a5a">ケース '+n+'</span>'+
+      (caseItemsMap[racketId].length>1 ? '<button type="button" class="btn btn-d" style="font-size:11px;padding:3px 8px" onclick="removeCaseItem(\''+racketId+'\',\''+cid+'\')">削除</button>' : '')+
+    '</div>'+
+    '<label class="fl" style="margin-bottom:4px">ケースの種類 <span class="req">*</span></label>'+
+    '<div class="rg" id="'+racketId+'-'+cid+'-type" data-name="'+racketId+'-'+cid+'-type"></div>'+
+    '<div class="emsg" id="err-'+racketId+'-'+cid+'-type">種類を選択してください</div>'+
+    '<div class="case-other-input" id="'+racketId+'-'+cid+'-otherwrap" style="display:none;margin-top:6px">'+
+      '<input type="text" id="'+racketId+'-'+cid+'-other" placeholder="ケースの特徴を入力してください" style="font-size:13px">'+
+      '<div class="emsg" id="err-'+racketId+'-'+cid+'-other">特徴を入力してください</div>'+
+    '</div>'+
+    '<div class="case-color-sub" id="'+racketId+'-'+cid+'-colorsub" style="display:none;margin-top:6px">'+
+      '<label class="fl" style="margin-bottom:4px">ケースカラー <span class="req">*</span></label>'+
+      '<div class="rg" id="'+racketId+'-'+cid+'-color" data-name="'+racketId+'-'+cid+'-color"></div>'+
+      '<div class="emsg" id="err-'+racketId+'-'+cid+'-color">カラーを選択してください</div>'+
+      '<div class="case-color-other-wrap" id="'+racketId+'-'+cid+'-colorowrap" style="display:none;margin-top:6px">'+
+        '<input type="text" id="'+racketId+'-'+cid+'-colorother" placeholder="カラーを入力してください" style="font-size:13px">'+
+        '<div class="emsg" id="err-'+racketId+'-'+cid+'-colorother">カラーを入力してください</div>'+
+      '</div>'+
+    '</div>';
+  container.appendChild(div);
+
+  makeRG(racketId+'-'+cid+'-type', CASE_TYPES, data.type||'');
+  makeRG(racketId+'-'+cid+'-color', CASE_COLOR_TYPES, data.color||'');
+
+  var inp = document.getElementById(racketId+'-'+cid+'-other');
+  if(inp && data.other) inp.value = data.other;
+  var cinp = document.getElementById(racketId+'-'+cid+'-colorother');
+  if(cinp && data.colorOther) cinp.value = data.colorOther;
+
+  if(data.type==='その他') document.getElementById(racketId+'-'+cid+'-otherwrap').style.display='block';
+  if(data.type && CASE_TYPES_WITH_COLOR.indexOf(data.type)>=0) document.getElementById(racketId+'-'+cid+'-colorsub').style.display='block';
+  if(data.color==='その他') document.getElementById(racketId+'-'+cid+'-colorowrap').style.display='block';
+
+  setupCaseItemListeners(racketId, cid);
+  return cid;
+}
+
+function setupCaseItemListeners(racketId, cid){
+  var typeEl = document.getElementById(racketId+'-'+cid+'-type');
+  var colorEl = document.getElementById(racketId+'-'+cid+'-color');
+
+  typeEl.addEventListener('change', function(e){
+    if(!e.target||e.target.type!=='radio')return;
+    var ow = document.getElementById(racketId+'-'+cid+'-otherwrap');
+    var csub = document.getElementById(racketId+'-'+cid+'-colorsub');
+    if(e.target.value==='その他'){
+      ow.style.display='block';
+    } else {
+      ow.style.display='none';
+      var oi=document.getElementById(racketId+'-'+cid+'-other');
+      if(oi){oi.value='';oi.classList.remove('ferr');}
+      clearErr(racketId+'-'+cid+'-other');
+    }
+    if(CASE_TYPES_WITH_COLOR.indexOf(e.target.value)>=0){
+      csub.style.display='block';
+    } else {
+      csub.style.display='none';
+      makeRG(racketId+'-'+cid+'-color', CASE_COLOR_TYPES, '');
+      setupColorListenerOnly(racketId, cid);
+      var cowrap=document.getElementById(racketId+'-'+cid+'-colorowrap');
+      if(cowrap)cowrap.style.display='none';
+      var coi=document.getElementById(racketId+'-'+cid+'-colorother');
+      if(coi)coi.value='';
+      clearErr(racketId+'-'+cid+'-color');clearErr(racketId+'-'+cid+'-colorother');
+    }
+  });
+
+  setupColorListenerOnly(racketId, cid);
+}
+
+function setupColorListenerOnly(racketId, cid){
+  var colorEl = document.getElementById(racketId+'-'+cid+'-color');
+  if(!colorEl) return;
+  colorEl.addEventListener('change', function(e){
+    if(!e.target||e.target.type!=='radio')return;
+    var cowrap=document.getElementById(racketId+'-'+cid+'-colorowrap');
+    if(e.target.value==='その他'){
+      cowrap.style.display='block';
+    } else {
+      cowrap.style.display='none';
+      var coi=document.getElementById(racketId+'-'+cid+'-colorother');
       if(coi){coi.value='';coi.classList.remove('ferr');}
-      clearErr(id+'-casecolorother');
+      clearErr(racketId+'-'+cid+'-colorother');
     }
   });
 }
-function clearErr(id){
-  var em=document.getElementById('err-'+id);
-  var el=document.getElementById(id);
-  if(em)em.classList.remove('show');
-  if(el)el.classList.remove('gerr','ferr');
+
+function removeCaseItem(racketId, cid, skipMinCheck){
+  if(!skipMinCheck && caseItemsMap[racketId] && caseItemsMap[racketId].length<=1){
+    showToast('最低1つのケースが必要です',true); return;
+  }
+  var el = document.getElementById(racketId+'-caseitem-'+cid);
+  if(el) el.remove();
+  if(caseItemsMap[racketId]){
+    var idx = caseItemsMap[racketId].indexOf(cid);
+    if(idx>=0) caseItemsMap[racketId].splice(idx,1);
+  }
+  renumberCaseItems(racketId);
 }
+
+function renumberCaseItems(racketId){
+  var ids = caseItemsMap[racketId]||[];
+  ids.forEach(function(cid, i){
+    var block = document.getElementById(racketId+'-caseitem-'+cid);
+    if(block){
+      var label = block.querySelector('span');
+      if(label) label.textContent = 'ケース '+(i+1);
+    }
+  });
+}
+
 function getCaseValue(id){
   var keeping=getRG(id+'-case');
-  if(keeping!=='預かりあり')return{keeping:keeping,type:'',other:'',color:'',colorOther:''};
-  var type=getRG(id+'-casetype');
-  var other='';
-  if(type==='その他'){
-    var oi=document.getElementById(id+'-caseother');
-    other=oi?oi.value.trim():'';
-  }
-  var color='';
-  var colorOther='';
-  if(CASE_TYPES_WITH_COLOR.indexOf(type)>=0){
-    color=getRG(id+'-casecolor');
-    if(color==='その他'){
-      var coi=document.getElementById(id+'-casecolorother');
-      colorOther=coi?coi.value.trim():'';
+  if(keeping!=='預かりあり')return{keeping:keeping,cases:[]};
+  var ids = caseItemsMap[id]||[];
+  var cases = ids.map(function(cid){
+    var type=getRG(id+'-'+cid+'-type');
+    var other='';
+    if(type==='その他'){
+      var oi=document.getElementById(id+'-'+cid+'-other');
+      other=oi?oi.value.trim():'';
     }
-  }
-  return{keeping:keeping,type:type,other:other,color:color,colorOther:colorOther};
+    var color='';
+    var colorOther='';
+    if(CASE_TYPES_WITH_COLOR.indexOf(type)>=0){
+      color=getRG(id+'-'+cid+'-color');
+      if(color==='その他'){
+        var coi=document.getElementById(id+'-'+cid+'-colorother');
+        colorOther=coi?coi.value.trim():'';
+      }
+    }
+    return {type:type, other:other, color:color, colorOther:colorOther};
+  });
+  return{keeping:keeping,cases:cases};
 }
+
 function validateCase(id){
   var keeping=getRG(id+'-case');
   if(!keeping){
@@ -671,41 +741,51 @@ function validateCase(id){
   }
   clearErr(id+'-case');
   if(keeping!=='預かりあり')return true;
+
   var ok=true;
-  var type=getRG(id+'-casetype');
-  if(!type){
-    var tel=document.getElementById(id+'-casetype');
-    var tem=document.getElementById('err-'+id+'-casetype');
-    if(tel)tel.classList.add('gerr');if(tem)tem.classList.add('show');
-    ok=false;
-  } else {
-    clearErr(id+'-casetype');
-  }
-  if(type==='その他'){
-    var oi=document.getElementById(id+'-caseother');
-    var oem=document.getElementById('err-'+id+'-caseother');
-    if(!oi||!oi.value.trim()){
-      if(oi)oi.classList.add('ferr');if(oem)oem.classList.add('show');
+  var ids = caseItemsMap[id]||[];
+  ids.forEach(function(cid){
+    var type=getRG(id+'-'+cid+'-type');
+    if(!type){
+      var tel=document.getElementById(id+'-'+cid+'-type');
+      var tem=document.getElementById('err-'+id+'-'+cid+'-type');
+      if(tel)tel.classList.add('gerr');if(tem)tem.classList.add('show');
       ok=false;
     } else {
-      if(oi)oi.classList.remove('ferr');if(oem)oem.classList.remove('show');
+      clearErr(id+'-'+cid+'-type');
     }
-  }
-  // カラーバリデーション（カラー対象の種類のみ）
-  if(CASE_TYPES_WITH_COLOR.indexOf(type)>=0){
-    if(!chkRG(id+'-casecolor'))ok=false;
-    var ccolor=getRG(id+'-casecolor');
-    if(ccolor==='その他'){
-      var coi=document.getElementById(id+'-casecolorother');
-      var coem=document.getElementById('err-'+id+'-casecolorother');
-      if(!coi||!coi.value.trim()){
-        if(coi)coi.classList.add('ferr');if(coem)coem.classList.add('show');
+    if(type==='その他'){
+      var oi=document.getElementById(id+'-'+cid+'-other');
+      var oem=document.getElementById('err-'+id+'-'+cid+'-other');
+      if(!oi||!oi.value.trim()){
+        if(oi)oi.classList.add('ferr');if(oem)oem.classList.add('show');
         ok=false;
       } else {
-        if(coi)coi.classList.remove('ferr');if(coem)coem.classList.remove('show');
+        if(oi)oi.classList.remove('ferr');if(oem)oem.classList.remove('show');
       }
     }
-  }
+    if(CASE_TYPES_WITH_COLOR.indexOf(type)>=0){
+      var color=getRG(id+'-'+cid+'-color');
+      if(!color){
+        var cel=document.getElementById(id+'-'+cid+'-color');
+        var cem=document.getElementById('err-'+id+'-'+cid+'-color');
+        if(cel)cel.classList.add('gerr');if(cem)cem.classList.add('show');
+        ok=false;
+      } else {
+        clearErr(id+'-'+cid+'-color');
+      }
+      if(color==='その他'){
+        var coi=document.getElementById(id+'-'+cid+'-colorother');
+        var coem=document.getElementById('err-'+id+'-'+cid+'-colorother');
+        if(!coi||!coi.value.trim()){
+          if(coi)coi.classList.add('ferr');if(coem)coem.classList.add('show');
+          ok=false;
+        } else {
+          if(coi)coi.classList.remove('ferr');if(coem)coem.classList.remove('show');
+        }
+      }
+    }
+  });
   return ok;
 }
 
@@ -719,14 +799,17 @@ function getRacketData(id){
     gutSource:getRG(id+'-gutsource'),
     caseKeeping:(function(){var cv=getCaseValue(id);
       if(cv.keeping!=='預かりあり')return cv.keeping;
-      var label=cv.type==='その他'?(cv.type+(cv.other?'（'+cv.other+'）':'')):(cv.type||cv.keeping);
-      if(cv.color){
-        var colorLabel=cv.color==='その他'?('その他（'+cv.colorOther+'）'):cv.color;
-        label=label+'／'+colorLabel;
-      }
-      return label;
+      var labels=cv.cases.map(function(c){
+        var label=c.type==='その他'?(c.type+(c.other?'（'+c.other+'）':'')):(c.type||'');
+        if(c.color){
+          var colorLabel=c.color==='その他'?('その他（'+c.colorOther+'）'):c.color;
+          label=label+'／'+colorLabel;
+        }
+        return label;
+      });
+      return labels.length>1?labels.map(function(l,i){return (i+1)+':'+l;}).join(' / '):(labels[0]||cv.keeping);
     })(),
-    caseType:getCaseValue(id).type,caseOther:getCaseValue(id).other,caseColor:getCaseValue(id).color,caseColorOther:getCaseValue(id).colorOther,
+    cases:getCaseValue(id).cases,
     gripTape:(function(){var v=getRG(id+'-grip');return v==='巻き無し'?'':v;}()),
     grommet:(function(){
       var v=getRG(id+'-grommet');
