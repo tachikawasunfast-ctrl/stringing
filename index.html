@@ -460,7 +460,8 @@ function renderRacketPanel(id,data){
   makeRG(id+'-case',['預かりあり','預かりなし'],d.caseKeeping||'');
   setupCaseListeners(id, d);
   makeRG(id+'-grip',['右巻き','左巻き','巻き無し'],d.gripTape||'');
-  makeRG(id+'-grommet',['全交換','一部交換','交換無し'],d.grommet||'');
+  makeRG(id+'-grommet',['全交換','一部交換','交換無し'],(function(){var g=d.grommet||'';return typeof g==='object'?g.val:g;})());
+  if(typeof d.grommet==='object'&&d.grommet.part){var gp=document.getElementById(id+'-grommetpart');if(gp)gp.value=d.grommet.part;}
   setupGrommetListener(id, d);
   makeRG(id+'-stencil',['赤','黒','無し'],(function(){
     var s=d.stencil||'';
@@ -491,10 +492,15 @@ function setupGrommetListener(id, d){
   if(!el) return;
   var wrap = document.getElementById(id+'-grommetpartwrap');
   // 初期表示（復元時）
-  if(d.grommetPart && wrap) wrap.style.display = 'block';
+  var grommetHasPart = typeof d.grommet==='object'?d.grommet.part:(d.grommetPart||'');
+  if(grommetHasPart && wrap) wrap.style.display = 'block';
+  // 一部交換が選択済みの場合もwrapを表示
+  var grommetVal = typeof d.grommet==='object'?d.grommet.val:(d.grommet||'');
+  if(grommetVal==='一部交換' && wrap) wrap.style.display = 'block';
   // 初期値セット
   var inp = document.getElementById(id+'-grommetpart');
-  if(inp && d.grommetPart) inp.value = d.grommetPart;
+  var grommetPartVal = typeof d.grommet==='object'?d.grommet.part:(d.grommetPart||'');
+  if(inp && grommetPartVal) inp.value = grommetPartVal;
   // ラジオ変更リスナー（イベント委譲）
   el.addEventListener('change', function(e){
     if(!e.target || e.target.type !== 'radio') return;
@@ -1129,14 +1135,38 @@ function addRacketBlank(){
 function showCopySelect(){
   document.getElementById('copy-select-wrap').style.display='block';
 }
+
+function getRacketDataCopy(id){
+  var stencilVal=getStencilValue(id);
+  var caseVal=getCaseValue(id);
+  var grommetRaw=getRG(id+'-grommet');
+  var grommetPart='';
+  if(grommetRaw==='一部交換'){
+    var gp=document.getElementById(id+'-grommetpart');
+    grommetPart=gp?gp.value.trim():'';
+  }
+  return{
+    racket:document.getElementById(id+'-racket')?document.getElementById(id+'-racket').value:'',
+    racketType:getRG(id+'-rackettype'),
+    gutType:document.getElementById(id+'-guttype')?document.getElementById(id+'-guttype').value:'',
+    gutColor:document.getElementById(id+'-gutcolor')?document.getElementById(id+'-gutcolor').value:'',
+    tension:document.getElementById(id+'-tension')?document.getElementById(id+'-tension').value:'',
+    gutSource:getRG(id+'-gutsource'),
+    caseKeeping:caseVal.keeping,
+    cases:caseVal.cases,
+    gripTape:getRG(id+'-grip'),
+    grommet:{val:grommetRaw,part:grommetPart},
+    stencil:stencilVal.color||'',
+    stencilMaker:stencilVal.maker||'',
+    deform:getRG(id+'-deform'),
+    note:document.getElementById(id+'-note')?document.getElementById(id+'-note').value:''
+  };
+}
 function addRacketCopy(){
   var sel=document.getElementById('copy-select-source');
   var srcId=sel.value;
   if(!srcId){closeAddModal();return;}
-  var data=getRacketData(srcId);
-  // ケース情報はコピーしない（毎回個別に入力する）
-  data.caseKeeping='';
-  data.cases=[];
+  var data=getRacketDataCopy(srcId);
   closeAddModal();
   addRacket(data);
   scrollToRacketSection();
