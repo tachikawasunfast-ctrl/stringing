@@ -234,8 +234,9 @@ textarea{resize:vertical;min-height:60px}
           <div class="emsg" id="err-customer">お客様名を入力してください</div>
         </div>
         <div class="fg">
-          <label class="fl">電話番号</label>
+          <label class="fl">電話番号 <span class="req">*</span></label>
           <input type="text" id="f-tel" placeholder="例：090-1234-5678">
+          <div class="emsg" id="err-tel">電話番号を入力してください</div>
         </div>
       </div>
     </div>
@@ -922,6 +923,14 @@ function submitForm(e){
   var cust=document.getElementById('f-customer');
   if(!cust.value.trim()){cust.classList.add('ferr');document.getElementById('err-customer').classList.add('show');valid=false;}
   else{cust.classList.remove('ferr');document.getElementById('err-customer').classList.remove('show');}
+  // 電話番号バリデーション
+  var telEl=document.getElementById('f-tel');
+  var telEm=document.getElementById('err-tel');
+  if(!telEl||!telEl.value.trim()){
+    if(telEl)telEl.classList.add('ferr');if(telEm)telEm.classList.add('show');valid=false;
+  } else {
+    if(telEl)telEl.classList.remove('ferr');if(telEm)telEm.classList.remove('show');
+  }
   // 仕上がり予定日時バリデーション
   var dueDate=document.getElementById('f-due-date');
   var dueHour=document.getElementById('f-due-hour');
