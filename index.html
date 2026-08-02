@@ -401,78 +401,87 @@ function rgRow(id,label,opts,defVal,warnVals){
 function renderRacketPanel(id,data){
   var panels=document.getElementById('racket-panels');var d=data||{};
   var div=document.createElement('div');div.className='racket-panel';div.id='rpanel-'+id;
+  var delBtn=rackets.length>1?'<button type="button" class="btn btn-d" onclick="removeRacket(\''+id+'\')">削除</button>':'';
   div.innerHTML=
     '<div class="rkt-header">'+
-      '<div class="rkt-label">ラケット情報</div>'+
-      (rackets.length>1?'<button type="button" class="btn btn-d" onclick="removeRacket(\''+id+'\')">削除</button>':'')+
-    '</div>'+
+    '<div class="rkt-label">ラケット情報</div>'+delBtn+'</div>'+
     '<div class="g2">'+
-      '<div class="fg"><label class="fl">ラケット名 <span class="req">*</span></label><input type="text" id="'+id+'-racket" placeholder="例：YONEX EZONE 98" value="'+(d.racket||'')+'"><div class="emsg" id="err-'+id+'-racket">ラケット名を入力してください</div></div>'+
+    '<div class="fg"><label class="fl">ラケット名 <span class="req">*</span></label>'+
+    '<input type="text" id="'+id+'-racket" placeholder="例：YONEX EZONE 98" value="'+(d.racket||'')+'">'+
+    '<div class="emsg" id="err-'+id+'-racket">ラケット名を入力してください</div></div>'+
     '</div>'+
     rgRow(id+'-rackettype','ラケット区分',['新規購入','持ち込み'],d.racketType||'')+
     '<div class="g3">'+
-      '<div class="fg"><label class="fl">ガットの種類 <span class="req">*</span></label><input type="text" id="'+id+'-guttype" placeholder="例：ポリツアーエア" value="'+(d.gutType||'')+'"><div class="emsg" id="err-'+id+'-guttype">ガットの種類を入力してください</div></div>'+
-      '<div class="fg"><label class="fl">ガットカラー <span class="req">*</span></label><input type="text" id="'+id+'-gutcolor" placeholder="例：イエロー" value="'+(d.gutColor||'')+'"><div class="emsg" id="err-'+id+'-gutcolor">ガットカラーを入力してください</div></div>'+
-      '<div class="fg"><label class="fl">テンション <span class="req">*</span></label><input type="text" id="'+id+'-tension" placeholder="例：50 / 50/48 / 25kg" value="'+(d.tension||'')+'"><div class="emsg" id="err-'+id+'-tension">テンションを入力してください</div></div>'+
+    '<div class="fg"><label class="fl">ガットの種類 <span class="req">*</span></label>'+
+    '<input type="text" id="'+id+'-guttype" placeholder="例：ポリツアーエア" value="'+(d.gutType||'')+'">'+
+    '<div class="emsg" id="err-'+id+'-guttype">ガットの種類を入力してください</div></div>'+
+    '<div class="fg"><label class="fl">ガットカラー <span class="req">*</span></label>'+
+    '<input type="text" id="'+id+'-gutcolor" placeholder="例：イエロー" value="'+(d.gutColor||'')+'">'+
+    '<div class="emsg" id="err-'+id+'-gutcolor">ガットカラーを入力してください</div></div>'+
+    '<div class="fg"><label class="fl">テンション <span class="req">*</span></label>'+
+    '<input type="text" id="'+id+'-tension" placeholder="例：50 / 50/48 / 25kg" value="'+(d.tension||'')+'">'+
+    '<div class="emsg" id="err-'+id+'-tension">テンションを入力してください</div></div>'+
     '</div>'+
     rgRow(id+'-gutsource','ガット区分',GUT_OPTS,d.gutSource||'')+
     '<div class="g2">'+
-      '<div class="fg">'+
-        '<label class="fl">ケース預かり <span class="req">*</span></label>'+
-        '<div class="rg" id="'+id+'-case" data-name="'+id+'-case"></div>'+
-        '<div class="emsg" id="err-'+id+'-case">選択してください</div>'+
-        '<div class="case-multi-wrap" id="'+id+'-casemultiwrap" style="display:none;margin-top:8px">'+
-          '<div id="'+id+'-caseitems"></div>'+
-          '<button type="button" class="add-racket-btn" style="margin-top:6px;font-size:12px;padding:5px 10px" onclick="addCaseItem(\''+id+'\')">＋ ケースを追加</button>'+
-        '</div>'+
-      '</div>'+
-      '<div class="fg">'+
-        '<label class="fl">グリップテープ <span class="req">*</span></label>'+
-        '<div class="rg" id="'+id+'-grip" data-name="'+id+'-grip"></div>'+
-        '<div class="emsg" id="err-'+id+'-grip">選択してください</div>'+
-        '<div class="grip-sub" id="'+id+'-gripsub">'+
-          '<label class="fl" style="margin-bottom:4px">元グリップ <span class="req">*</span></label>'+
-          '<div class="rg" id="'+id+'-gripbase" data-name="'+id+'-gripbase"></div>'+
-          '<div class="emsg" id="err-'+id+'-gripbase">選択してください</div>'+
-        '</div>'+
-      '</div>'+
+    '<div class="fg">'+
+    '<label class="fl">ケース預かり <span class="req">*</span></label>'+
+    '<div class="rg" id="'+id+'-case" data-name="'+id+'-case"></div>'+
+    '<div class="emsg" id="err-'+id+'-case">選択してください</div>'+
+    '<div class="case-multi-wrap" id="'+id+'-casemultiwrap" style="display:none;margin-top:8px">'+
+    '<div id="'+id+'-caseitems"></div>'+
+    '<button type="button" class="add-racket-btn" style="margin-top:6px;font-size:12px;padding:5px 10px" onclick="addCaseItem(\''+id+'\')">＋ ケースを追加</button>'+
+    '</div>'+
+    '</div>'+
+    '<div class="fg">'+
+    '<label class="fl">グリップテープ <span class="req">*</span></label>'+
+    '<div class="rg" id="'+id+'-grip" data-name="'+id+'-grip"></div>'+
+    '<div class="emsg" id="err-'+id+'-grip">選択してください</div>'+
+    '<div class="grip-sub show" id="'+id+'-gripsub">'+
+    '<label class="fl" style="margin-bottom:4px">元グリップ <span class="req">*</span></label>'+
+    '<div class="rg" id="'+id+'-gripbase" data-name="'+id+'-gripbase"></div>'+
+    '<div class="emsg" id="err-'+id+'-gripbase">選択してください</div>'+
+    '</div>'+
+    '</div>'+
     '</div>'+
     '<div class="g2">'+
-      (function(){
-      return '<div class="fg">'+
-        '<label class="fl">グロメット <span class="req">*</span></label>'+
-        '<div class="rg" id="'+id+'-grommet" data-name="'+id+'-grommet"></div>'+
-        '<div class="emsg" id="err-'+id+'-grommet">選択してください</div>'+
-        '<div class="grommet-partial-wrap" id="'+id+'-grommetpartwrap" style="display:none;margin-top:6px">'+
-          '<input type="text" id="'+id+'-grommetpart" placeholder="例：3T, 9H など交換箇所を記入" style="font-size:13px">'+
-          '<div class="emsg" id="err-'+id+'-grommetpart">交換箇所を入力してください</div>'+
-        '</div>'+
-      '</div>';
-    })()+
-      (function(){
-      return '<div class="fg">'+
-        '<label class="fl">ステンシル <span class="req">*</span></label>'+
-        '<div class="rg" id="'+id+'-stencil" data-name="'+id+'-stencil"></div>'+
-        '<div class="emsg" id="err-'+id+'-stencil">選択してください</div>'+
-        '<div class="stencil-sub" id="'+id+'-stencilsub">'+
-          '<label class="fl" style="margin-bottom:6px">メーカー <span class="req">*</span></label>'+
-          '<div class="rg" id="'+id+'-stencilmaker" data-name="'+id+'-stencilmaker"></div>'+
-          '<div class="emsg" id="err-'+id+'-stencilmaker">メーカーを選択してください</div>'+
-        '</div>'+
-      '</div>';
-    })()+
+    '<div class="fg"><label class="fl">グロメット <span class="req">*</span></label>'+
+    '<div class="rg" id="'+id+'-grommet" data-name="'+id+'-grommet"></div>'+
+    '<div class="emsg" id="err-'+id+'-grommet">選択してください</div>'+
+    '<div class="grommet-partial-wrap" id="'+id+'-grommetpartwrap" style="display:none;margin-top:6px">'+
+    '<input type="text" id="'+id+'-grommetpart" placeholder="例：3T, 9H など交換箇所を記入" style="font-size:13px">'+
+    '<div class="emsg" id="err-'+id+'-grommetpart">交換箇所を入力してください</div>'+
     '</div>'+
-    rgRow(id+'-deform','折れ・変形了承',['了承済み','未'],d.deform||'',['了承済み'])+
-    '<div class="fg"><label class="fl">ラケットの備考</label><textarea id="'+id+'-note" placeholder="このラケットに関する特記事項">'+(d.note||'')+'</textarea></div>';
+    '</div>'+
+    '<div class="fg"><label class="fl">折れ・変形了承 <span class="req">*</span></label>'+
+    '<div class="rg" id="'+id+'-deform" data-name="'+id+'-deform"></div>'+
+    '<div class="emsg" id="err-'+id+'-deform">選択してください</div>'+
+    '</div>'+
+    '</div>'+
+    '<div class="fg" style="margin-bottom:10px">'+
+    '<label class="fl">ステンシル <span class="req">*</span></label>'+
+    '<div class="rg" id="'+id+'-stencil" data-name="'+id+'-stencil"></div>'+
+    '<div class="emsg" id="err-'+id+'-stencil">選択してください</div>'+
+    '<div class="stencil-sub" id="'+id+'-stencilsub">'+
+    '<label class="fl" style="margin-bottom:6px">メーカー <span class="req">*</span></label>'+
+    '<div class="rg" id="'+id+'-stencilmaker" data-name="'+id+'-stencilmaker"></div>'+
+    '<div class="emsg" id="err-'+id+'-stencilmaker">メーカーを選択してください</div>'+
+    '</div>'+
+    '</div>'+
+    '<div class="fg">'+
+    '<label class="fl">ラケットの備考</label>'+
+    '<textarea id="'+id+'-note" placeholder="このラケットに関する特記事項">'+(d.note||'')+'</textarea>'+
+    '</div>';
   panels.appendChild(div);
   makeRG(id+'-rackettype',['新規購入','持ち込み'],d.racketType||'');
-  makeRG(id+'-gutsource',GUT_OPTS,d.gutSource||'');
+  makeRG(id+'-gutsource',GUT_OPTS,(function(){var i=GUT_OPTS.indexOf(d.gutSource||'');return i>=0?d.gutSource:'';})());
   makeRG(id+'-case',['預かりあり','預かりなし'],d.caseKeeping||'');
   setupCaseListeners(id, d);
   makeRG(id+'-grip',['右巻き','左巻き','巻き無し'],d.gripTape||'');
   makeRG(id+'-gripbase',['そのまま','剥がす'],d.gripBase||'');
   setupGripListener(id, d);
-  makeRG(id+'-grommet',['全交換','一部交換','交換無し'],(function(){var g=d.grommet||'';return typeof g==='object'?g.val:g;})());
+  makeRG(id+'-grommet',['全交換','一部交換','交換無し'],
+    (function(){var g=d.grommet||'';return typeof g==='object'?g.val:g;})());
   if(typeof d.grommet==='object'&&d.grommet.part){var gp=document.getElementById(id+'-grommetpart');if(gp)gp.value=d.grommet.part;}
   setupGrommetListener(id, d);
   makeRG(id+'-stencil',['赤','黒','無し'],(function(){
@@ -1130,10 +1139,12 @@ function printOrder(order){
   }, 500);
 }
 
+var GAS_CODE = "// \u30ac\u30c3\u30c8\u5f35\u308a\u53d7\u4ed8\u30b7\u30b9\u30c6\u30e0 - Google Apps Script\uff08\u6700\u7d42\u7248\uff09\nconst SHEET_PENDING=\"\u4f5c\u696d\u672a\",SHEET_DONE=\"\u4f5c\u696d\u5b8c\u4e86\",SHEET_DELIVERED=\"\u304a\u6e21\u3057\u6e08\u307f\";\nconst HEADERS=[\"ID\",\"\u30e9\u30b1\u30c3\u30c8\u756a\u53f7\",\"\u53d7\u4ed8\u65e5\u6642\",\"\u4ed5\u4e0a\u304c\u308a\u4e88\u5b9a\",\"\u4f5c\u696d\u72b6\u6cc1\",\"\u304a\u6e21\u3057\u72b6\u6cc1\",\"\u304a\u5ba2\u69d8\u540d\",\"\u30e9\u30b1\u30c3\u30c8\u540d\",\"\u30e9\u30b1\u30c3\u30c8\u533a\u5206\",\"\u30ac\u30c3\u30c8\u7a2e\u985e\",\"\u30ac\u30c3\u30c8\u30ab\u30e9\u30fc\",\"\u30ac\u30c3\u30c8\u533a\u5206\",\"\u30c6\u30f3\u30b7\u30e7\u30f3\",\"\u30b1\u30fc\u30b9\",\"\u30b0\u30ea\u30c3\u30d7\u30c6\u30fc\u30d7\",\"\u30b0\u30ed\u30e1\u30c3\u30c8\",\"\u30b9\u30c6\u30f3\u30b7\u30eb\",\"\u6298\u308c\u5909\u5f62\",\"\u30e9\u30b1\u30c3\u30c8\u5099\u8003\",\"\u4f1a\u8a08\u72b6\u6cc1\"];\nconst COL_ID=1,COL_WORK=5,COL_DELIVERY=6,COL_DUE=4,NUM_COLS=HEADERS.length;\nconst COLOR_TODAY={bg:\"#FFFFFF\",font:\"#1a1a1a\"},COLOR_TOMORROW={bg:\"#B5D4F4\",font:\"#042C53\"},COLOR_DAY2={bg:\"#FAC775\",font:\"#412402\"},COLOR_DAY3PLUS={bg:\"#C0DD97\",font:\"#173404\"},COLOR_OVERDUE={bg:\"#F7C1C1\",font:\"#501313\"},COLOR_NODATE={bg:\"#D3D1C7\",font:\"#2C2C2A\"};\nfunction getDayDiff(d){if(!d)return null;var now=new Date(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate()),due=new Date(d),dueDay=new Date(due.getFullYear(),due.getMonth(),due.getDate());return Math.round((dueDay-today)/86400000);}\nfunction getRowColor(d){var diff=getDayDiff(d);if(diff===null)return COLOR_NODATE;if(diff<0)return COLOR_OVERDUE;if(diff===0)return COLOR_TODAY;if(diff===1)return COLOR_TOMORROW;if(diff===2)return COLOR_DAY2;return COLOR_DAY3PLUS;}\nfunction applyRowColor(sheet,r,d){try{var last=sheet.getLastRow();if(r<2||r>last)return;var c=getRowColor(d);sheet.getRange(r,1,1,NUM_COLS).setBackground(c.bg).setFontColor(c.font);}catch(e){}}\nfunction recolorAllRows(sheet){try{var last=sheet.getLastRow();if(!sheet||last<2)return;for(var i=2;i<=last;i++){var d=sheet.getRange(i,COL_DUE).getValue();applyRowColor(sheet,i,d?String(d):null);}}catch(e){}}\nfunction initSheet(sheet){if(sheet.getLastRow()===0){sheet.appendRow(HEADERS);sheet.getRange(1,1,1,NUM_COLS).setFontWeight(\"bold\").setBackground(\"#1a3a2a\").setFontColor(\"#ffffff\");sheet.setFrozenRows(1);}}\nfunction getOrCreateSheet(ss,name){var s=ss.getSheetByName(name);if(!s){s=ss.insertSheet(name);initSheet(s);}return s;}\nfunction setDropdown(sheet,r,name){if(name===SHEET_PENDING||name===SHEET_DONE){sheet.getRange(r,COL_WORK).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList([\"\u4f5c\u696d\u672a\",\"\u4f5c\u696d\u5b8c\u4e86\"],true).build());}if(name===SHEET_DONE){sheet.getRange(r,COL_DELIVERY).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList([\"\u304a\u6e21\u3057\u672a\",\"\u304a\u6e21\u3057\u6e08\u307f\"],true).build());}}\nfunction isSameID(a,b){var na=Number(a),nb=Number(b);if(!isNaN(na)&&!isNaN(nb)&&String(a).trim()!=\"\"&&String(b).trim()!=\"\")return na===nb;return String(a).trim()===String(b).trim();}\nfunction findRowNumsByID(sheet,tid){var last=sheet.getLastRow();if(last<2)return[];var ids=sheet.getRange(2,COL_ID,last-1,1).getValues();var m=[];for(var i=0;i<ids.length;i++){if(isSameID(ids[i][0],tid))m.push(i+2);}return m;}\nfunction moveRowsByID(from,to,tid,ow,od){var toName=to.getName();var nums=findRowNumsByID(from,tid);if(!nums.length)return;var alreadyInDest=findRowNumsByID(to,tid).length>0;if(alreadyInDest){nums.slice().reverse().forEach(function(rn){var cid=from.getRange(rn,COL_ID).getValue();if(isSameID(cid,tid))from.deleteRow(rn);});return;}nums.forEach(function(rn){var rd=from.getRange(rn,1,1,NUM_COLS).getValues()[0];if(!isSameID(rd[COL_ID-1],tid))return;var nd=rd.slice();if(ow!==null)nd[COL_WORK-1]=ow;if(od!==null)nd[COL_DELIVERY-1]=od;to.appendRow(nd);var nr=to.getLastRow();setDropdown(to,nr,toName);if(toName===SHEET_PENDING)applyRowColor(to,nr,nd[COL_DUE-1]?String(nd[COL_DUE-1]):null);});nums.slice().reverse().forEach(function(rn){var cid=from.getRange(rn,COL_ID).getValue();if(isSameID(cid,tid))from.deleteRow(rn);});}\nfunction dedupSheet(sheet){try{var last=sheet.getLastRow();if(last<2)return;var all=sheet.getRange(2,1,last-1,NUM_COLS).getValues();var seen={};var toDelete=[];for(var i=0;i<all.length;i++){var rid=String(all[i][COL_ID-1]).trim();if(!rid)continue;var key=rid+\"__\"+String(all[i][1]).trim();if(seen[key]){toDelete.push(i+2);}else{seen[key]=true;}}for(var j=toDelete.length-1;j>=0;j--){if(toDelete[j]>1)sheet.deleteRow(toDelete[j]);}}catch(e){}}\nfunction cleanupAllSheets(){var ss=SpreadsheetApp.getActiveSpreadsheet();[SHEET_PENDING,SHEET_DONE,SHEET_DELIVERED].forEach(function(name){var s=ss.getSheetByName(name);if(s)dedupSheet(s);});SpreadsheetApp.getUi().alert(\"\u91cd\u8907\u524a\u9664\u304c\u5b8c\u4e86\u3057\u307e\u3057\u305f\");}\nfunction sortPendingSheet(sheet){var last=sheet.getLastRow();if(last<=2)return;sheet.getRange(2,1,last-1,NUM_COLS).sort({column:COL_DUE,ascending:true});}\nfunction onEdit(e){var sheet=e.source.getActiveSheet();var sn=sheet.getName();var row=e.range.getRow();var col=e.range.getColumn();var val=e.value;if(row<=1)return;if(sn!==SHEET_PENDING&&sn!==SHEET_DONE)return;if(col!==COL_WORK&&col!==COL_DELIVERY)return;var tid=sheet.getRange(row,COL_ID).getValue();if(tid===\"\"||tid===null||tid===undefined)return;var lock=LockService.getScriptLock();try{lock.waitLock(15000);}catch(err){return;}try{var ss=e.source;var mn=findRowNumsByID(sheet,tid);if(!mn.length)return;if(sn===SHEET_PENDING&&col===COL_WORK&&val===\"\u4f5c\u696d\u5b8c\u4e86\"){var done=getOrCreateSheet(ss,SHEET_DONE);moveRowsByID(sheet,done,tid,\"\u4f5c\u696d\u5b8c\u4e86\",null);sortPendingSheet(sheet);return;}if(sn===SHEET_DONE&&col===COL_DELIVERY&&val===\"\u304a\u6e21\u3057\u6e08\u307f\"){var deliv=getOrCreateSheet(ss,SHEET_DELIVERED);moveRowsByID(sheet,deliv,tid,null,\"\u304a\u6e21\u3057\u6e08\u307f\");return;}if(sn===SHEET_DONE&&col===COL_WORK&&val===\"\u4f5c\u696d\u672a\"){var pend=getOrCreateSheet(ss,SHEET_PENDING);moveRowsByID(sheet,pend,tid,\"\u4f5c\u696d\u672a\",\"\u304a\u6e21\u3057\u672a\");sortPendingSheet(pend);}}finally{lock.releaseLock();}}\nfunction dailyRecolor(){try{var ss=SpreadsheetApp.getActiveSpreadsheet();var p=ss.getSheetByName(SHEET_PENDING);if(p&&p.getLastRow()>=2)recolorAllRows(p);}catch(e){}}\nfunction doPost(e){var data=JSON.parse(e.postData.contents);var ss=SpreadsheetApp.getActiveSpreadsheet();var ps=getOrCreateSheet(ss,SHEET_PENDING);getOrCreateSheet(ss,SHEET_DONE);getOrCreateSheet(ss,SHEET_DELIVERED);if(data.action===\"append\"){data.rows.forEach(function(row){ps.appendRow(row);var nr=ps.getLastRow();setDropdown(ps,nr,SHEET_PENDING);applyRowColor(ps,nr,row[COL_DUE-1]?String(row[COL_DUE-1]):null);});dedupSheet(ps);sortPendingSheet(ps);}return ContentService.createTextOutput(JSON.stringify({status:\"ok\"})).setMimeType(ContentService.MimeType.JSON);}\nfunction doGet(e){return ContentService.createTextOutput(JSON.stringify({status:\"ok\"})).setMimeType(ContentService.MimeType.JSON);}\nfunction onOpen(){SpreadsheetApp.getUi().createMenu(\"\u53d7\u4ed8\u30b7\u30b9\u30c6\u30e0\").addItem(\"\u9078\u629e\u884c\u3092\u5370\u5237\",\"printSelectedRow\").addItem(\"\u5168\u30b7\u30fc\u30c8\u306e\u91cd\u8907\u524a\u9664\",\"cleanupAllSheets\").addToUi();}\nfunction printSelectedRow(){var ss=SpreadsheetApp.getActiveSpreadsheet();var sheet=ss.getActiveSheet();var row=sheet.getActiveCell().getRow();if(row<=1){SpreadsheetApp.getUi().alert(\"\u30c7\u30fc\u30bf\u884c\u3092\u9078\u629e\u3057\u3066\u304f\u3060\u3055\u3044\");return;}var data=sheet.getRange(row,1,1,NUM_COLS).getValues()[0];var orderId=String(data[COL_ID-1]).trim();if(!orderId){SpreadsheetApp.getUi().alert(\"ID\u304c\u898b\u3064\u304b\u308a\u307e\u305b\u3093\");return;}var allSheetNames=[SHEET_PENDING,SHEET_DONE,SHEET_DELIVERED];var rackets=[];allSheetNames.forEach(function(name){var s=ss.getSheetByName(name);if(!s)return;var last=s.getLastRow();if(last<2)return;var rows=s.getRange(2,1,last-1,NUM_COLS).getValues();rows.forEach(function(r){if(String(r[COL_ID-1]).trim()===orderId)rackets.push(r);});});if(!rackets.length){SpreadsheetApp.getUi().alert(\"\u30c7\u30fc\u30bf\u304c\u898b\u3064\u304b\u308a\u307e\u305b\u3093\");return;}rackets.sort(function(a,b){return Number(a[1])-Number(b[1]);});var order={id:orderId,customer:rackets[0][6],tel:\"\",due:rackets[0][3],rackets:rackets.map(function(r){return{racket:r[7],racketType:r[8],gutType:r[9],gutColor:r[10],gutSource:r[11],tension:r[12],caseKeeping:r[13],gripTape:r[14],grommet:r[15],stencil:r[16],deform:r[17],note:r[18]};})};var html=HtmlService.createHtmlOutput(buildPrintPageGAS(order)).setWidth(420).setHeight(620);SpreadsheetApp.getUi().showModalDialog(html,\"\u5370\u5237\u30d7\u30ec\u30d3\u30e5\u30fc\");}\nfunction buildPrintPageGAS(order){var due=fmtDueGAS(order.due);var id6=String(order.id).slice(-6);var rackets=order.rackets||[];var W=\"width:65mm;font-family:sans-serif;color:#000;padding:1.5mm 2mm;box-sizing:border-box\";var p1=buildCustomerCopyGAS(order,due,id6,W);var p2=buildTicketGAS(order,due,id6,W,rackets);return \"<!DOCTYPE html><html><head><meta charset='UTF-8'><style>@page{margin:0;size:65mm auto}body{margin:0;background:#fff}.pg{page-break-after:always}.pg:last-child{page-break-after:auto}button{margin:8px auto;display:block;padding:8px 24px;font-size:14px;cursor:pointer;border:1px solid #333;border-radius:6px;background:#1a3a2a;color:#fff;font-family:sans-serif}@media print{button{display:none!important}}</style></head><body><button onclick='window.print()'>\u5370\u5237\u3059\u308b</button><div class='pg'>\"+p1+\"</div><div class='pg'>\"+p2+\"</div></body></html>\";}\nfunction fmtDueGAS(dt){if(!dt)return\"\u672a\u8a2d\u5b9a\";var d=new Date(dt);var days=[\"\u65e5\",\"\u6708\",\"\u706b\",\"\u6c34\",\"\u6728\",\"\u91d1\",\"\u571f\"];var hh=String(d.getHours()).padStart(2,\"0\");var mm=String(d.getMinutes()).padStart(2,\"0\");var time=(d.getHours()===0&&d.getMinutes()===0)?\"\u6642\u523b\u672a\u5b9a\":hh+\":\"+mm;return(d.getMonth()+1)+\"\u6708\"+d.getDate()+\"\u65e5\uff08\"+days[d.getDay()]+\"\uff09\"+time;}\nfunction buildCustomerCopyGAS(order,due,id6,W){var h=\"<div style='\"+W+\"'>\";h+=\"<div style='font-size:12px;font-weight:bold;border:1px solid #000;padding:0.5mm 2mm;margin-bottom:0.8mm;display:flex;justify-content:space-between'><span>\u2605 \u304a\u5ba2\u69d8\u63a7\u3048</span><span style='font-size:9px;font-weight:normal'>#\"+id6+\"</span></div>\";h+=\"<div style='font-size:14px;font-weight:bold;margin-bottom:0.3mm'>\"+order.customer+\" \u69d8</div>\";h+=\"<hr style='border:none;border-top:1px dashed #000;margin:0.8mm 0'>\";h+=\"<div style='font-size:9px;margin-bottom:0.3mm'>\u4ed5\u4e0a\u304c\u308a\u4e88\u5b9a\u65e5\u6642</div>\";h+=\"<div style='font-size:15px;font-weight:bold;margin-bottom:0.8mm'>\"+due+\"</div>\";h+=\"<hr style='border:none;border-top:1px dashed #000;margin:0.8mm 0'>\";h+=\"<div style='font-size:10px;font-weight:bold;margin-bottom:0.3mm'>\u55b6\u696d\u65e5\u6642</div>\";h+=\"<div style='font-size:10px;line-height:1.6'>\u5e73\u65e5 12:00-20:00\u3000\u571f\u65e5\u795d 10:00-18:00<br>\u5b9a\u4f11\u65e5\u3000\u706b\u66dc\u65e5</div>\";h+=\"</div>\";return h;}\nfunction buildTicketGAS(order,due,id6,W,rackets){var h=\"<div style='\"+W+\"'>\";h+=\"<div style='font-size:9px;font-weight:bold;border:1px solid #000;padding:0.3mm 1.5mm;margin-bottom:0.5mm;display:flex;justify-content:space-between'><span>\u3010 \u4f1d \u7968 \u3011</span><span style='font-size:8px;font-weight:normal'>#\"+id6+\"</span></div>\";h+=\"<div style='font-size:14px;font-weight:bold;margin-bottom:0.2mm'>\"+order.customer+\" \u69d8</div>\";h+=\"<hr style='border:none;border-top:1px dashed #000;margin:0.8mm 0'>\";h+=\"<div style='font-size:7px;margin-bottom:0.2mm'>\u4ed5\u4e0a\u304c\u308a\u4e88\u5b9a\u65e5\u6642</div>\";h+=\"<div style='font-size:11px;font-weight:bold;margin-bottom:0.5mm'>\"+due+\"</div>\";h+=\"<hr style='border:none;border-top:1px dashed #000;margin:0.4mm 0'>\";rackets.forEach(function(r,i){if(i>0)h+=\"<hr style='border:none;border-top:1px dashed #000;margin:0.3mm 0'>\";h+=\"<div style='font-size:8px;font-weight:bold;border-left:2px solid #000;padding-left:1mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>\"+(i+1)+\"/\"+rackets.length+\" \"+(r.racket||\"(no name)\")+\"</div>\";var line2=[];if(r.gutType||r.gutColor)line2.push((r.gutType||\"\")+(r.gutColor?\"/\"+r.gutColor:\"\"));if(r.tension)line2.push(r.tension);if(r.gutSource)line2.push(\"(\"+r.gutSource+\")\");if(line2.length)h+=\"<div style='font-size:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>\"+line2.join(\" \")+\"</div>\";var line3=[];if(r.gripTape)line3.push(\"Grip:\"+r.gripTape);if(r.grommet)line3.push(\"Grommet:\"+r.grommet);if(r.stencil)line3.push(\"Stencil:\"+r.stencil);if(line3.length)h+=\"<div style='font-size:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>\"+line3.join(\" / \")+\"</div>\";if(r.note)h+=\"<div style='font-size:7px;color:#333'>\u203b\"+r.note+\"</div>\";});h+=\"</div>\";return h;}";
+
 function printOrderById(id){
-  var orders = getOrders();
-  var o = orders.find(function(x){ return x.id === id; });
-  if(!o){ showToast('データが見つかりません', true); return; }
+  var orders=getOrders();
+  var o=orders.find(function(x){return x.id===id;});
+  if(!o){showToast('データが見つかりません',true);return;}
   printOrder(o);
 }
 
@@ -1143,8 +1154,24 @@ function scrollToRacketSection(){
     if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
   },100);
 }
+
+function autoDeleteOldTel(){
+  var orders=getOrders();
+  var now=Date.now();
+  var ONE_WEEK=7*24*60*60*1000;
+  var changed=false;
+  orders.forEach(function(o){
+    if(o.tel&&o.received){
+      var receivedTime=new Date(o.received).getTime();
+      if(!isNaN(receivedTime)&&(now-receivedTime)>=ONE_WEEK){
+        o.tel='';changed=true;
+      }
+    }
+  });
+  if(changed)saveOrders(orders);
+}
+
 function openAddModal(){
-  // コピー選択リストを更新
   var sel=document.getElementById('copy-select-source');
   sel.innerHTML='';
   rackets.forEach(function(id,i){
@@ -1168,34 +1195,6 @@ function addRacketBlank(){
 function showCopySelect(){
   document.getElementById('copy-select-wrap').style.display='block';
 }
-
-function getRacketDataCopy(id){
-  var stencilVal=getStencilValue(id);
-  var caseVal=getCaseValue(id);
-  var grommetRaw=getRG(id+'-grommet');
-  var grommetPart='';
-  if(grommetRaw==='一部交換'){
-    var gp=document.getElementById(id+'-grommetpart');
-    grommetPart=gp?gp.value.trim():'';
-  }
-  return{
-    racket:document.getElementById(id+'-racket')?document.getElementById(id+'-racket').value:'',
-    racketType:getRG(id+'-rackettype'),
-    gutType:document.getElementById(id+'-guttype')?document.getElementById(id+'-guttype').value:'',
-    gutColor:document.getElementById(id+'-gutcolor')?document.getElementById(id+'-gutcolor').value:'',
-    tension:document.getElementById(id+'-tension')?document.getElementById(id+'-tension').value:'',
-    gutSource:getRG(id+'-gutsource'),
-    caseKeeping:caseVal.keeping,
-    cases:caseVal.cases,
-    gripTape:getRG(id+'-grip'),
-    gripBase:getRG(id+'-gripbase'),
-    grommet:{val:grommetRaw,part:grommetPart},
-    stencil:stencilVal.color||'',
-    stencilMaker:stencilVal.maker||'',
-    deform:getRG(id+'-deform'),
-    note:document.getElementById(id+'-note')?document.getElementById(id+'-note').value:''
-  };
-}
 function addRacketCopy(){
   var sel=document.getElementById('copy-select-source');
   var srcId=sel.value;
@@ -1205,116 +1204,10 @@ function addRacketCopy(){
   addRacket(data);
   scrollToRacketSection();
 }
-// モーダル外クリックで閉じる
 document.addEventListener('click',function(e){
   var modal=document.getElementById('add-racket-modal');
   if(modal&&e.target===modal)closeAddModal();
 });
-
-
-function getDueValue(){
-  var d = document.getElementById('f-due-date') ? document.getElementById('f-due-date').value : '';
-  var h = document.getElementById('f-due-hour') ? document.getElementById('f-due-hour').value : '';
-  var m = document.getElementById('f-due-min') ? document.getElementById('f-due-min').value : '';
-  if(!d) return '';
-  if(h === '未定') return d + 'T00:00';
-  if(!h || !m) return d + 'T00:00';
-  return d + 'T' + String(h).padStart(2,'0') + ':' + m;
-}
-function getDueTimeLabel(){
-  var h = document.getElementById('f-due-hour') ? document.getElementById('f-due-hour').value : '';
-  var m = document.getElementById('f-due-min') ? document.getElementById('f-due-min').value : '';
-  if(h === '未定') return '未定';
-  if(h && m) return h + ':' + m;
-  return '';
-}
-function autoDeleteOldTel(){
-  var orders = getOrders();
-  var now = Date.now();
-  var ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
-  var changed = false;
-  orders.forEach(function(o){
-    if(o.tel && o.received){
-      var receivedTime = new Date(o.received).getTime();
-      if(!isNaN(receivedTime) && (now - receivedTime) >= ONE_WEEK){
-        o.tel = '';
-        changed = true;
-      }
-    }
-  });
-  if(changed) saveOrders(orders);
-}
-function getOrders(){try{return JSON.parse(localStorage.getItem(STORE_KEY)||'[]');}catch(e){return[];}}
-function saveOrders(o){localStorage.setItem(STORE_KEY,JSON.stringify(o));}
-function fmtDt(dt,dueTime){if(!dt)return'';
-  var d=new Date(dt);
-  var base=(d.getMonth()+1)+'/'+(d.getDate());
-  if(dueTime==='未定'||(!dueTime&&d.getHours()===0&&d.getMinutes()===0))return base+' 時刻未定';
-  return base+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
-}
-function showTab(name,el){
-  ['form','list','settings'].forEach(function(t){document.getElementById('tab-'+t).style.display=(t===name)?'':'none';});
-  document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});el.classList.add('active');
-  if(name==='list'){autoDeleteOldTel();renderList();}if(name==='settings')loadSettings();
-}
-function setFilter(f){
-  currentFilter=f;['all','unpaid'].forEach(function(k){document.getElementById('filt-'+k).className='fb '+(k===f?'on':'off');});renderList();
-}
-function gutBadgeClass(src){if(src==='購入')return'g-shop';if(src==='キープロール')return'g-keep';if(src==='単張り持ち込み')return'g-single';return'g-roll';}
-function renderList(){
-  var orders=getOrders();var q=(document.getElementById('search-input').value||'').toLowerCase();var el=document.getElementById('order-list');
-  var filtered=orders.filter(function(o){
-    var names=(o.rackets||[]).map(function(r){return r.racket;}).join(' ');
-    var match=!q||o.customer.toLowerCase().indexOf(q)>=0||names.toLowerCase().indexOf(q)>=0;
-    if(!match)return false;
-    if(currentFilter==='unpaid')return o.payment==='会計未';
-    return true;
-  });
-  if(!filtered.length){el.innerHTML='<div class="empty">受付データがありません</div>';return;}
-  el.innerHTML=filtered.map(function(o){
-    var ri=(o.rackets||[]).map(function(r,i){
-      return'<div class="rkt-item">'+
-        '<div class="rkt-title"><span style="background:#1a3a2a;color:#fff;border-radius:4px;padding:1px 7px;font-size:11px">'+(i+1)+'</span>'+(r.racket||'（ラケット名未入力）')+
-        '<span style="font-size:11px;color:#888">'+(r.racketType||'')+'</span>'+
-        '<span class="gbadge '+gutBadgeClass(r.gutSource)+'">'+(r.gutSource||'')+'</span>'+
-        (r.deform==='了承済み'?'<span class="warn-badge">折れ変形了承済み</span>':'<span class="ok-badge">折れ変形未</span>')+
-        '</div>'+
-        '<div class="rkt-grid">'+
-        '<div class="di">ガット <span>'+(r.gutType||'—')+'</span></div>'+
-        '<div class="di">カラー <span>'+(r.gutColor||'—')+'</span></div>'+
-        '<div class="di">テンション <span>'+(r.tension?r.tension:'—')+'</span></div>'+
-        '<div class="di">ケース <span>'+(r.caseKeeping||'—')+'</span></div>'+
-        '<div class="di">グリップ <span>'+(r.gripTape||'—')+'</span></div>'+
-        '<div class="di">グロメット <span>'+(r.grommet||'—')+'</span></div>'+
-        '<div class="di">ステンシル <span>'+(r.stencil||'—')+'</span></div>'+
-        '</div>'+
-        (r.note?'<div style="font-size:12px;color:#888;margin-top:6px">備考：<span style="color:#1a1a1a">'+r.note+'</span></div>':'')+
-      '</div>';
-    }).join('');
-    return'<div class="oc">'+
-      '<div class="oh"><div>'+
-        '<div class="on2">'+o.customer+' <span class="rcnt">'+((o.rackets||[]).length)+'</span></div>'+
-        '<div class="om">受付：'+fmtDt(o.received)+'　仕上がり予定：'+(fmtDt(o.due,o.dueTime)||'未設定')+'</div>'+
-      '</div><div class="bgs"><span class="bp '+(o.payment==='会計済み'?'bpaid':'bunpaid')+'">'+o.payment+'</span></div></div>'+
-      '<div class="rkt-list">'+ri+'</div>'+
-      '<div class="oa">'+
-        (o.payment==='会計未'?'<button class="ab primary" onclick="togglePay(\''+o.id+'\')">会計済みにする</button>':'<button class="ab" onclick="togglePay(\''+o.id+'\')">会計未に戻す</button>')+
-        '<button class="ab" onclick="pushSingleOrder(\''+o.id+'\')">📤 Sheetsに登録</button>'+
-        '<button class="ab" onclick="printOrderById(\''+o.id+'\')">🖨 伝票印刷</button>'+
-        '<button class="ab danger" style="margin-left:auto" onclick="deleteOrder(\''+o.id+'\')">削除</button>'+
-      '</div></div>';
-  }).join('');
-}
-function togglePay(id){var orders=getOrders();var o=orders.find(function(x){return x.id===id;});if(!o)return;o.payment=o.payment==='会計未'?'会計済み':'会計未';saveOrders(orders);renderList();}
-function deleteOrder(id){if(!confirm('このデータを削除しますか？'))return;saveOrders(getOrders().filter(function(o){return o.id!==id;}));renderList();showToast('削除しました');}
-function orderToRows(o){return(o.rackets||[]).map(function(r,i){return[o.id,i+1,o.received,o.due,'作業未','お渡し未',o.customer,r.racket,r.racketType,r.gutType,r.gutColor,r.gutSource,r.tension,r.caseKeeping,(r.gripTape+(r.gripBase?' ('+r.gripBase+')':'')),r.grommet,r.stencil,r.deform||'',r.note||'',o.payment];});}
-function pushToSheets(orders,silent){
-  var url=getGasUrl();if(!url){if(!silent)showToast('GAS URLが設定されていません',true);return;}
-  var rows=[];orders.forEach(function(o){orderToRows(o).forEach(function(r){rows.push(r);});});
-  fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'append',rows:rows})})
-    .then(function(){if(!silent)showToast('スプレッドシートに書き込みました！');})
-    .catch(function(e){if(!silent)showToast('書き込みエラー: '+e.message,true);});
-}
 
 function pushSingleOrder(id){
   var orders=getOrders();
@@ -1322,24 +1215,24 @@ function pushSingleOrder(id){
   if(!o){showToast('データが見つかりません',true);return;}
   pushToSheets([o],false);
 }
-function exportToSheets(){var orders=getOrders();if(!orders.length){showToast('データがありません',true);return;}pushToSheets(orders,false);}
-function loadSettings(){var s=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');document.getElementById('gas-url').value=s.gasUrl||'';}
-function saveSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify({gasUrl:document.getElementById('gas-url').value}));}
-function getGasUrl(){return(JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}')).gasUrl||'';}
-function testConnection(){
-  var url=document.getElementById('gas-url').value;var notice=document.getElementById('conn-notice');
-  if(!url){notice.style.display='';notice.className='notice err';notice.textContent='URLを入力してください';return;}
-  notice.style.display='';notice.className='notice';notice.textContent='接続テスト中...';
-  fetch(url+'?test=1',{mode:'no-cors'}).then(function(){notice.className='notice';notice.textContent='✔ 接続成功（URLが有効です）';}).catch(function(e){notice.className='notice err';notice.textContent='✘ 接続失敗: '+e.message;});
-}
-var GAS_CODE="// \u30ac\u30c3\u30c8\u5f35\u308a\u53d7\u4ed8\u30b7\u30b9\u30c6\u30e0 - Google Apps Script\uff08v11\uff09\nconst SHEET_PENDING=\"\u4f5c\u696d\u672a\",SHEET_DONE=\"\u4f5c\u696d\u5b8c\u4e86\",SHEET_DELIVERED=\"\u304a\u6e21\u3057\u6e08\u307f\";\nconst HEADERS=[\"ID\",\"\u30e9\u30b1\u30c3\u30c8\u756a\u53f7\",\"\u53d7\u4ed8\u65e5\u6642\",\"\u4ed5\u4e0a\u304c\u308a\u4e88\u5b9a\",\"\u4f5c\u696d\u72b6\u6cc1\",\"\u304a\u6e21\u3057\u72b6\u6cc1\",\"\u304a\u5ba2\u69d8\u540d\",\"\u30e9\u30b1\u30c3\u30c8\u540d\",\"\u30e9\u30b1\u30c3\u30c8\u533a\u5206\",\"\u30ac\u30c3\u30c8\u7a2e\u985e\",\"\u30ac\u30c3\u30c8\u30ab\u30e9\u30fc\",\"\u30ac\u30c3\u30c8\u533a\u5206\",\"\u30c6\u30f3\u30b7\u30e7\u30f3(lb)\",\"\u30b1\u30fc\u30b9\",\"\u30b0\u30ea\u30c3\u30d7\u30c6\u30fc\u30d7\",\"\u30b0\u30ed\u30e1\u30c3\u30c8\",\"\u30b9\u30c6\u30f3\u30b7\u30eb\",\"\u6298\u308c\u5909\u5f62\",\"\u30e9\u30b1\u30c3\u30c8\u5099\u8003\",\"\u4f1a\u8a08\u72b6\u6cc1\"];\nconst COL_ID=1,COL_WORK=5,COL_DELIVERY=6,COL_DUE=4,NUM_COLS=HEADERS.length;\nconst COLOR_TODAY={bg:\"#FFFFFF\",font:\"#1a1a1a\"},COLOR_TOMORROW={bg:\"#B5D4F4\",font:\"#042C53\"},COLOR_DAY2={bg:\"#FAC775\",font:\"#412402\"},COLOR_DAY3PLUS={bg:\"#C0DD97\",font:\"#173404\"},COLOR_OVERDUE={bg:\"#F7C1C1\",font:\"#501313\"},COLOR_NODATE={bg:\"#D3D1C7\",font:\"#2C2C2A\"};\nfunction getDayDiff(d){if(!d)return null;var now=new Date(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate()),due=new Date(d),dueDay=new Date(due.getFullYear(),due.getMonth(),due.getDate());return Math.round((dueDay-today)/86400000);}\nfunction getRowColor(d){var diff=getDayDiff(d);if(diff===null)return COLOR_NODATE;if(diff<0)return COLOR_OVERDUE;if(diff===0)return COLOR_TODAY;if(diff===1)return COLOR_TOMORROW;if(diff===2)return COLOR_DAY2;return COLOR_DAY3PLUS;}\nfunction applyRowColor(sheet,r,d){try{var last=sheet.getLastRow();if(r<2||r>last)return;var c=getRowColor(d);sheet.getRange(r,1,1,NUM_COLS).setBackground(c.bg).setFontColor(c.font);}catch(e){}}\nfunction recolorAllRows(sheet){try{var last=sheet.getLastRow();if(!sheet||last<2)return;for(var i=2;i<=last;i++){var d=sheet.getRange(i,COL_DUE).getValue();applyRowColor(sheet,i,d?String(d):null);}}catch(e){}}\nfunction initSheet(sheet){if(sheet.getLastRow()===0){sheet.appendRow(HEADERS);sheet.getRange(1,1,1,NUM_COLS).setFontWeight(\"bold\").setBackground(\"#1a3a2a\").setFontColor(\"#ffffff\");sheet.setFrozenRows(1);}}\nfunction getOrCreateSheet(ss,name){var s=ss.getSheetByName(name);if(!s){s=ss.insertSheet(name);initSheet(s);}return s;}\nfunction setDropdown(sheet,r,name){if(name===SHEET_PENDING||name===SHEET_DONE){sheet.getRange(r,COL_WORK).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList([\"\u4f5c\u696d\u672a\",\"\u4f5c\u696d\u5b8c\u4e86\"],true).build());}if(name===SHEET_DONE){sheet.getRange(r,COL_DELIVERY).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList([\"\u304a\u6e21\u3057\u672a\",\"\u304a\u6e21\u3057\u6e08\u307f\"],true).build());}}\nfunction isSameID(a,b){var na=Number(a),nb=Number(b);if(!isNaN(na)&&!isNaN(nb)&&String(a).trim()!=\"\"&&String(b).trim()!=\"\")return na===nb;return String(a).trim()===String(b).trim();}\nfunction findRowNumsByID(sheet,tid){var last=sheet.getLastRow();if(last<2)return[];var ids=sheet.getRange(2,COL_ID,last-1,1).getValues();var m=[];for(var i=0;i<ids.length;i++){if(isSameID(ids[i][0],tid))m.push(i+2);}return m;}\nfunction moveRowsByID(from,to,tid,ow,od){var toName=to.getName();var nums=findRowNumsByID(from,tid);if(!nums.length)return;var alreadyInDest=findRowNumsByID(to,tid).length>0;if(alreadyInDest){nums.slice().reverse().forEach(function(rn){var cid=from.getRange(rn,COL_ID).getValue();if(isSameID(cid,tid))from.deleteRow(rn);});return;}nums.forEach(function(rn){var rd=from.getRange(rn,1,1,NUM_COLS).getValues()[0];if(!isSameID(rd[COL_ID-1],tid))return;var nd=rd.slice();if(ow!==null)nd[COL_WORK-1]=ow;if(od!==null)nd[COL_DELIVERY-1]=od;to.appendRow(nd);var nr=to.getLastRow();setDropdown(to,nr,toName);if(toName===SHEET_PENDING)applyRowColor(to,nr,nd[COL_DUE-1]?String(nd[COL_DUE-1]):null);});nums.slice().reverse().forEach(function(rn){var cid=from.getRange(rn,COL_ID).getValue();if(isSameID(cid,tid))from.deleteRow(rn);});}\nfunction dedupSheet(sheet){var last=sheet.getLastRow();if(last<2)return;var all=sheet.getRange(2,1,last-1,NUM_COLS).getValues();var seen={};var toDelete=[];for(var i=0;i<all.length;i++){var key=String(all[i][COL_ID-1]).trim()+\"__\"+String(all[i][1]).trim();if(seen[key]){toDelete.push(i+2);}else{seen[key]=true;}}for(var j=toDelete.length-1;j>=0;j--){sheet.deleteRow(toDelete[j]);}}\nfunction cleanupAllSheets(){var ss=SpreadsheetApp.getActiveSpreadsheet();[SHEET_PENDING,SHEET_DONE,SHEET_DELIVERED].forEach(function(name){var s=ss.getSheetByName(name);if(s)dedupSheet(s);});SpreadsheetApp.getUi().alert(\"\u91cd\u8907\u524a\u9664\u304c\u5b8c\u4e86\u3057\u307e\u3057\u305f\");}\nfunction sortPendingSheet(sheet){var last=sheet.getLastRow();if(last<=2)return;sheet.getRange(2,1,last-1,NUM_COLS).sort({column:COL_DUE,ascending:true});}\nfunction onEdit(e){var sheet=e.source.getActiveSheet();var sn=sheet.getName();var row=e.range.getRow();var col=e.range.getColumn();var val=e.value;if(row<=1)return;if(sn!==SHEET_PENDING&&sn!==SHEET_DONE)return;if(col!==COL_WORK&&col!==COL_DELIVERY)return;var tid=sheet.getRange(row,COL_ID).getValue();if(tid===\"\"||tid===null||tid===undefined)return;var lock=LockService.getScriptLock();try{lock.waitLock(15000);}catch(err){return;}try{var ss=e.source;var mn=findRowNumsByID(sheet,tid);if(!mn.length)return;if(sn===SHEET_PENDING&&col===COL_WORK&&val===\"\u4f5c\u696d\u5b8c\u4e86\"){var done=getOrCreateSheet(ss,SHEET_DONE);moveRowsByID(sheet,done,tid,\"\u4f5c\u696d\u5b8c\u4e86\",null);sortPendingSheet(sheet);return;}if(sn===SHEET_DONE&&col===COL_DELIVERY&&val===\"\u304a\u6e21\u3057\u6e08\u307f\"){var deliv=getOrCreateSheet(ss,SHEET_DELIVERED);moveRowsByID(sheet,deliv,tid,null,\"\u304a\u6e21\u3057\u6e08\u307f\");return;}if(sn===SHEET_DONE&&col===COL_WORK&&val===\"\u4f5c\u696d\u672a\"){var pend=getOrCreateSheet(ss,SHEET_PENDING);moveRowsByID(sheet,pend,tid,\"\u4f5c\u696d\u672a\",\"\u304a\u6e21\u3057\u672a\");sortPendingSheet(pend);}}finally{lock.releaseLock();}}\nfunction dailyRecolor(){try{var ss=SpreadsheetApp.getActiveSpreadsheet();var p=ss.getSheetByName(SHEET_PENDING);if(p&&p.getLastRow()>=2)recolorAllRows(p);}catch(e){}}\nfunction doPost(e){var data=JSON.parse(e.postData.contents);var ss=SpreadsheetApp.getActiveSpreadsheet();var ps=getOrCreateSheet(ss,SHEET_PENDING);getOrCreateSheet(ss,SHEET_DONE);getOrCreateSheet(ss,SHEET_DELIVERED);if(data.action===\"append\"){data.rows.forEach(function(row){ps.appendRow(row);var nr=ps.getLastRow();setDropdown(ps,nr,SHEET_PENDING);applyRowColor(ps,nr,row[COL_DUE-1]?String(row[COL_DUE-1]):null);});dedupSheet(ps);sortPendingSheet(ps);}return ContentService.createTextOutput(JSON.stringify({status:\"ok\"})).setMimeType(ContentService.MimeType.JSON);}\nfunction doGet(e){return ContentService.createTextOutput(JSON.stringify({status:\"ok\"})).setMimeType(ContentService.MimeType.JSON);}\nfunction onOpen(){SpreadsheetApp.getUi().createMenu(\"\u53d7\u4ed8\u30b7\u30b9\u30c6\u30e0\").addItem(\"\u9078\u629e\u884c\u3092\u5370\u5237\",\"printSelectedRow\").addItem(\"\u5168\u30b7\u30fc\u30c8\u306e\u91cd\u8907\u524a\u9664\",\"cleanupAllSheets\").addToUi();}\nfunction printSelectedRow(){var ss=SpreadsheetApp.getActiveSpreadsheet();var sheet=ss.getActiveSheet();var row=sheet.getActiveCell().getRow();if(row<=1){SpreadsheetApp.getUi().alert(\"\u30c7\u30fc\u30bf\u884c\u3092\u9078\u629e\u3057\u3066\u304f\u3060\u3055\u3044\");return;}var data=sheet.getRange(row,1,1,NUM_COLS).getValues()[0];var orderId=String(data[COL_ID-1]).trim();if(!orderId){SpreadsheetApp.getUi().alert(\"ID\u304c\u898b\u3064\u304b\u308a\u307e\u305b\u3093\");return;}var allSheetNames=[SHEET_PENDING,SHEET_DONE,SHEET_DELIVERED];var rackets=[];allSheetNames.forEach(function(name){var s=ss.getSheetByName(name);if(!s)return;var last=s.getLastRow();if(last<2)return;var rows=s.getRange(2,1,last-1,NUM_COLS).getValues();rows.forEach(function(r){if(String(r[COL_ID-1]).trim()===orderId)rackets.push(r);});});if(!rackets.length){SpreadsheetApp.getUi().alert(\"\u30c7\u30fc\u30bf\u304c\u898b\u3064\u304b\u308a\u307e\u305b\u3093\");return;}rackets.sort(function(a,b){return Number(a[1])-Number(b[1]);});var order={id:orderId,customer:rackets[0][6],tel:\"\",due:rackets[0][3],rackets:rackets.map(function(r){return{racket:r[7],racketType:r[8],gutType:r[9],gutColor:r[10],gutSource:r[11],tension:r[12],caseKeeping:r[13],gripTape:r[14],grommet:r[15],stencil:r[16],deform:r[17],note:r[18]};})};var html=HtmlService.createHtmlOutput(buildPrintPage(order)).setWidth(420).setHeight(620);SpreadsheetApp.getUi().showModalDialog(html,\"\u5370\u5237\u30d7\u30ec\u30d3\u30e5\u30fc\");}\nfunction buildPrintPage(order){var due=fmtDueGAS(order.due);var id6=String(order.id).slice(-6);var rackets=order.rackets||[];var W=\"width:65mm;font-family:sans-serif;color:#000;padding:1.5mm 2mm;box-sizing:border-box\";var p1=buildCustomerCopy(order,due,id6,W);var p2=buildTicket(order,due,id6,W,rackets);return \"<!DOCTYPE html><html><head><meta charset='UTF-8'><style>@page{margin:0;size:65mm auto}body{margin:0;background:#fff}.pg{page-break-after:always}.pg:last-child{page-break-after:auto}button{margin:8px auto;display:block;padding:8px 24px;font-size:14px;cursor:pointer;border:1px solid #333;border-radius:6px;background:#1a3a2a;color:#fff;font-family:sans-serif}@media print{button{display:none!important}}</style></head><body><button onclick='window.print()'>\u5370\u5237\u3059\u308b</button><div class='pg'>\"+p1+\"</div><div class='pg'>\"+p2+\"</div></body></html>\";}\nfunction fmtDueGAS(dt){if(!dt)return\"\u672a\u8a2d\u5b9a\";var d=new Date(dt);var days=[\"\u65e5\",\"\u6708\",\"\u706b\",\"\u6c34\",\"\u6728\",\"\u91d1\",\"\u571f\"];var hh=String(d.getHours()).padStart(2,\"0\");var mm=String(d.getMinutes()).padStart(2,\"0\");var time=(d.getHours()===0&&d.getMinutes()===0)?\"\u6642\u523b\u672a\u5b9a\":hh+\":\"+mm;return(d.getMonth()+1)+\"\u6708\"+d.getDate()+\"\u65e5\uff08\"+days[d.getDay()]+\"\uff09\"+time;}\nfunction buildCustomerCopy(order,due,id6,W){var h=\"<div style='\"+W+\"'>\";h+=\"<div style='font-size:12px;font-weight:bold;border:1px solid #000;padding:0.5mm 2mm;margin-bottom:0.8mm;display:flex;justify-content:space-between'><span>\u2605 \u304a\u5ba2\u69d8\u63a7\u3048</span><span style='font-size:9px;font-weight:normal'>#\"+id6+\"</span></div>\";h+=\"<div style='font-size:14px;font-weight:bold;margin-bottom:0.3mm'>\"+order.customer+\" \u69d8</div>\";h+=\"<hr style='border:none;border-top:1px dashed #000;margin:0.8mm 0'>\";h+=\"<div style='font-size:9px;margin-bottom:0.3mm'>\u4ed5\u4e0a\u304c\u308a\u4e88\u5b9a\u65e5\u6642</div>\";h+=\"<div style='font-size:15px;font-weight:bold;margin-bottom:0.8mm'>\"+due+\"</div>\";h+=\"<hr style='border:none;border-top:1px dashed #000;margin:0.8mm 0'>\";h+=\"<div style='font-size:10px;font-weight:bold;margin-bottom:0.3mm'>\u55b6\u696d\u65e5\u6642</div>\";h+=\"<div style='font-size:10px;line-height:1.6'>\u5e73\u65e5 12:00-20:00\u3000\u571f\u65e5\u795d 10:00-18:00<br>\u5b9a\u4f11\u65e5\u3000\u706b\u66dc\u65e5</div>\";h+=\"</div>\";return h;}\nfunction buildTicket(order,due,id6,W,rackets){var h=\"<div style='\"+W+\"'>\";h+=\"<div style='font-size:12px;font-weight:bold;border:1px solid #000;padding:0.5mm 2mm;margin-bottom:0.8mm;display:flex;justify-content:space-between'><span>\u3010 \u4f1d \u7968 \u3011</span><span style='font-size:9px;font-weight:normal'>#\"+id6+\"</span></div>\";h+=\"<div style='font-size:14px;font-weight:bold;margin-bottom:0.2mm'>\"+order.customer+\" \u69d8</div>\";h+=\"<hr style='border:none;border-top:1px dashed #000;margin:0.8mm 0'>\";h+=\"<div style='font-size:7px;margin-bottom:0.2mm'>\u4ed5\u4e0a\u304c\u308a\u4e88\u5b9a\u65e5\u6642</div>\";h+=\"<div style='font-size:11px;font-weight:bold;margin-bottom:0.5mm'>\"+due+\"</div>\";h+=\"<hr style='border:none;border-top:1px dashed #000;margin:0.4mm 0'>\";rackets.forEach(function(r,i){if(i>0)h+=\"<hr style='border:none;border-top:1px dashed #000;margin:0.3mm 0'>\";h+=\"<div style='font-size:8px;font-weight:bold;border-left:2px solid #000;padding-left:1mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>\"+(i+1)+\"/\"+rackets.length+\" \"+(r.racket||\"(no name)\")+\"</div>\";var line2=[];if(r.gutType||r.gutColor)line2.push((r.gutType||\"\")+(r.gutColor?\"/\"+r.gutColor:\"\"));if(r.tension)line2.push(r.tension+\"lb\");if(r.gutSource)line2.push(\"(\"+r.gutSource+\")\");if(line2.length)h+=\"<div style='font-size:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>\"+line2.join(\" \")+\"</div>\";});h+=\"</div>\";return h;}";
 
 function copyGasCode(){
-  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(GAS_CODE).then(function(){showToast('GASコードをコピーしました！');});}
-  else{var ta=document.createElement('textarea');ta.value=GAS_CODE;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('GASコードをコピーしました！');}
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(GAS_CODE).then(function(){showToast('GASコードをコピーしました！');});
+  } else {
+    var ta=document.createElement('textarea');ta.value=GAS_CODE;
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');
+    document.body.removeChild(ta);showToast('GASコードをコピーしました！');
+  }
 }
+
 var toastTimer;
-function showToast(msg,isErr){var t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(isErr?' err':'');clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.className='toast';},2800);}
+function showToast(msg,isErr){
+  var t=document.getElementById('toast');t.textContent=msg;
+  t.className='toast show'+(isErr?' err':'');
+  clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.className='toast';},2800);
+}
+
 autoDeleteOldTel();
 initForm();
 document.getElementById('f-received').value=toLocalDt(new Date());
