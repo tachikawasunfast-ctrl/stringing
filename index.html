@@ -478,7 +478,7 @@ function renderRacketPanel(id,data){
   makeRG(id+'-case',['預かりあり','預かりなし'],d.caseKeeping||'');
   setupCaseListeners(id, d);
   makeRG(id+'-grip',['右巻き','左巻き','巻き無し'],d.gripTape||'');
-  makeRG(id+'-gripbase',['そのまま','剥がす'],d.gripBase||'');
+  makeRG(id+'-gripbase',['剥がす','そのまま'],d.gripBase||'');
   setupGripListener(id, d);
   makeRG(id+'-grommet',['全交換','一部交換','交換無し'],
     (function(){var g=d.grommet||'';return typeof g==='object'?g.val:g;})());
