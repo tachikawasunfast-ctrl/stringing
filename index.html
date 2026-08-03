@@ -1028,6 +1028,14 @@ function submitForm(e){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
+function fmtDt(dt,dueTime){
+  if(!dt)return'';
+  var d=new Date(dt);
+  var base=(d.getMonth()+1)+'/'+(d.getDate());
+  if(dueTime==='未定'||(!dueTime&&d.getHours()===0&&d.getMinutes()===0))return base+' 時刻未定';
+  return base+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+
 function fmtDtFull(dt){
   if(!dt)return'未設定';
   var d=new Date(dt);
