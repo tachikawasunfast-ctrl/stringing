@@ -132,6 +132,12 @@ textarea{resize:vertical;min-height:60px}
 .add-modal-btn.blue{background:#e8f0fe;border-color:#4a6fa5;color:#1a3a8a}
 .add-modal-btn.blue:hover{background:#d4e0f4}
 .add-modal-cancel{margin-top:6px;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;border:0.5px solid rgba(0,0,0,.2);background:transparent;color:#666;font-family:inherit;width:100%}
+.biz-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;font-size:13px}
+.biz-lbl{font-size:12px;color:#555;font-weight:500;min-width:110px}
+.biz-row input[type=time],.biz-row input[type=date],.biz-row input[type=text]{width:auto;padding:6px 8px;border:0.5px solid rgba(0,0,0,.2);border-radius:8px;font-size:13px;font-family:inherit}
+.biz-day{display:inline-flex;align-items:center;gap:3px;margin-right:10px;cursor:pointer}
+.biz-cl-item{display:flex;align-items:center;gap:10px;padding:6px 10px;background:#f9f9f7;border:0.5px solid rgba(0,0,0,.1);border-radius:8px;margin-bottom:6px;font-size:13px}
+.biz-cl-item span.d{font-weight:500}
 .copy-select-label{font-size:12px;color:#666;margin-bottom:6px;margin-top:2px}
 .copy-select{width:100%;padding:8px 10px;border:0.5px solid rgba(0,0,0,.2);border-radius:8px;font-size:14px;font-family:inherit;background:#fff}
 </style>
@@ -196,7 +202,7 @@ textarea{resize:vertical;min-height:60px}
           <label class="fl">仕上がり予定日時 <span class="req">*</span></label>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
             <input type="date" id="f-due-date" style="flex:1;min-width:120px" oninput="updateDueDow()"><span id="f-due-dow" style="font-size:14px;font-weight:500;color:#1a3a2a;white-space:nowrap;padding:0 2px"></span>
-            <select id="f-due-hour" style="width:70px;padding:8px 6px;border:0.5px solid rgba(0,0,0,.2);border-radius:8px;font-size:14px;background:#fff;font-family:inherit">
+            <select id="f-due-hour" onchange="liveDueCheck()" style="width:70px;padding:8px 6px;border:0.5px solid rgba(0,0,0,.2);border-radius:8px;font-size:14px;background:#fff;font-family:inherit">
               <option value="">時</option>
               <option value="未定">未定</option>
               <option value="10">10時</option>
@@ -211,7 +217,7 @@ textarea{resize:vertical;min-height:60px}
               <option value="19">19時</option>
               <option value="20">20時</option>
             </select>
-            <select id="f-due-min" style="width:70px;padding:8px 6px;border:0.5px solid rgba(0,0,0,.2);border-radius:8px;font-size:14px;background:#fff;font-family:inherit">
+            <select id="f-due-min" onchange="liveDueCheck()" style="width:70px;padding:8px 6px;border:0.5px solid rgba(0,0,0,.2);border-radius:8px;font-size:14px;background:#fff;font-family:inherit">
               <option value="">分</option>
               <option value="00">00分</option>
               <option value="10">10分</option>
@@ -278,6 +284,23 @@ textarea{resize:vertical;min-height:60px}
       <div class="cl-item"><div class="cl-dot" style="background:#F7C1C1"></div>期限超過（赤）</div>
       <div class="cl-item"><div class="cl-dot" style="background:#D3D1C7"></div>未設定（グレー）</div>
     </div>
+  </div>
+  <div class="scard">
+    <div class="stitle">営業日・臨時休業の設定（この端末のブラウザに保存）</div>
+    <div class="sdesc">仕上がり予定日時が定休日・臨時休業日・営業時間外の場合は、受付登録時にエラーになります。祝日は土日と同じ営業時間として判定します。</div>
+    <div class="biz-row"><span class="biz-lbl">定休曜日</span><span id="biz-closed-days"></span></div>
+    <div class="biz-row"><span class="biz-lbl">平日の営業時間</span>
+      <input type="time" id="biz-wd-open" onchange="saveBizFromInputs()"> ～ <input type="time" id="biz-wd-close" onchange="saveBizFromInputs()"></div>
+    <div class="biz-row"><span class="biz-lbl">土日祝の営業時間</span>
+      <input type="time" id="biz-we-open" onchange="saveBizFromInputs()"> ～ <input type="time" id="biz-we-close" onchange="saveBizFromInputs()"></div>
+    <div class="biz-lbl" style="margin:14px 0 6px">臨時休業日</div>
+    <div class="biz-row">
+      <input type="date" id="biz-cl-from"> ～ <input type="date" id="biz-cl-to">
+      <input type="text" id="biz-cl-note" placeholder="理由（任意）" style="max-width:180px">
+      <button type="button" class="btn btn-p" style="padding:7px 14px" onclick="addClosure()">追加</button>
+    </div>
+    <div class="sdesc" style="margin:4px 0 8px">1日だけの場合は終了日を空欄のままにしてください。</div>
+    <div id="biz-closure-list"></div>
   </div>
   <div class="scard">
     <div class="stitle">Google スプレッドシート連携</div>
@@ -946,12 +969,147 @@ function updateDueDow(){
   var el=document.getElementById('f-due-date');
   var dow=document.getElementById('f-due-dow');
   if(!el||!dow)return;
-  if(!el.value){dow.textContent='';return;}
+  if(!el.value){dow.textContent='';liveDueCheck();return;}
   var d=new Date(el.value+'T00:00');
   var days=['（日）','（月）','（火）','（水）','（木）','（金）','（土）'];
   dow.textContent=days[d.getDay()];
   // 土日で色変え
   dow.style.color=d.getDay()===0?'#c0392b':d.getDay()===6?'#1a3a8a':'#1a3a2a';
+  liveDueCheck();
+}
+
+// ===== 営業日・臨時休業の判定 =====
+var BIZ_KEY='gut_business';
+var DOW_NAMES=['日','月','火','水','木','金','土'];
+function storeDefaultClosedDays(){return /nipporinippou/i.test(location.hostname)?[2]:[2,5];}
+function bizDefaults(){return{closedDays:storeDefaultClosedDays(),wd:{open:'12:00',close:'20:00'},we:{open:'10:00',close:'18:00'},closures:[]};}
+function getBiz(){
+  var d=bizDefaults();
+  try{
+    var s=JSON.parse(localStorage.getItem(BIZ_KEY)||'null');
+    if(s){
+      if(Array.isArray(s.closedDays))d.closedDays=s.closedDays;
+      if(s.wd)d.wd=s.wd;
+      if(s.we)d.we=s.we;
+      if(Array.isArray(s.closures))d.closures=s.closures;
+    }
+  }catch(e){}
+  return d;
+}
+function bizReceiptText(){
+  var b=getBiz();
+  var names=b.closedDays.slice().sort().map(function(i){return DOW_NAMES[i]+'曜日';});
+  return '平日 '+b.wd.open+'-'+b.wd.close+'　土日祝 '+b.we.open+'-'+b.we.close+'<br>定休日　'+(names.length?names.join('・'):'なし');
+}
+function saveBiz(b){try{localStorage.setItem(BIZ_KEY,JSON.stringify(b));}catch(e){}}
+function hmToMin(s){var p=(s||'').split(':');return p.length<2?null:(+p[0])*60+(+p[1]);}
+
+function jpNthMonday(y,m,n){var first=new Date(y,m-1,1).getDay();return 1+((8-first)%7)+(n-1)*7;}
+function jpBaseHoliday(y,m,d){
+  var k=y-1980,spring=Math.floor(20.8431+0.242194*k-Math.floor(k/4)),autumn=Math.floor(23.2488+0.242194*k-Math.floor(k/4));
+  if(m===1)return d===1||d===jpNthMonday(y,1,2);
+  if(m===2)return d===11||d===23;
+  if(m===3)return d===spring;
+  if(m===4)return d===29;
+  if(m===5)return d>=3&&d<=5;
+  if(m===7)return d===jpNthMonday(y,7,3);
+  if(m===8)return d===11;
+  if(m===9)return d===jpNthMonday(y,9,3)||d===autumn;
+  if(m===10)return d===jpNthMonday(y,10,2);
+  if(m===11)return d===3||d===23;
+  return false;
+}
+function jpIsBase(dt){return jpBaseHoliday(dt.getFullYear(),dt.getMonth()+1,dt.getDate());}
+function isJpHoliday(y,m,d){
+  var dt=new Date(y,m-1,d);
+  if(jpIsBase(dt))return true;
+  var p=new Date(y,m-1,d-1);
+  while(jpIsBase(p)){if(p.getDay()===0)return true;p=new Date(p.getFullYear(),p.getMonth(),p.getDate()-1);}
+  if(dt.getDay()!==0&&jpIsBase(new Date(y,m-1,d-1))&&jpIsBase(new Date(y,m-1,d+1)))return true;
+  return false;
+}
+
+function checkDueBusiness(dateStr,h,m){
+  if(!dateStr)return'';
+  var biz=getBiz();
+  var p=dateStr.split('-'),y=+p[0],mo=+p[1],d=+p[2];
+  var dow=new Date(y,mo-1,d).getDay();
+  var label=mo+'月'+d+'日（'+DOW_NAMES[dow]+'）';
+  for(var i=0;i<biz.closures.length;i++){
+    var c=biz.closures[i],to=c.to||c.from;
+    if(dateStr>=c.from&&dateStr<=to)return label+'は臨時休業日です'+(c.note?'（'+c.note+'）':'');
+  }
+  if(biz.closedDays.indexOf(dow)>=0)return label+'は定休日です';
+  if(!h||h==='未定'||!m)return'';
+  var t=(+h)*60+(+m);
+  var holiday=isJpHoliday(y,mo,d);
+  var hrs=(dow===0||dow===6||holiday)?biz.we:biz.wd;
+  var o=hmToMin(hrs.open),cl=hmToMin(hrs.close);
+  if(o!==null&&cl!==null&&(t<o||t>cl))return label+(holiday?'（祝日）':'')+'の営業時間は '+hrs.open+'～'+hrs.close+' です。営業時間内の時刻を選んでください';
+  return'';
+}
+function liveDueCheck(){
+  var dd=document.getElementById('f-due-date'),em=document.getElementById('err-due');
+  if(!dd||!em)return;
+  var h=document.getElementById('f-due-hour'),mi=document.getElementById('f-due-min');
+  var msg=checkDueBusiness(dd.value,h?h.value:'',mi?mi.value:'');
+  if(msg){em.textContent=msg;em.classList.add('show');dd.classList.add('ferr');}
+  else{em.classList.remove('show');dd.classList.remove('ferr');}
+}
+
+function renderBizSettings(){
+  var biz=getBiz();
+  var box=document.getElementById('biz-closed-days');
+  if(!box)return;
+  box.innerHTML='';
+  DOW_NAMES.forEach(function(n,i){
+    var lb=document.createElement('label');lb.className='biz-day';
+    var cb=document.createElement('input');cb.type='checkbox';cb.id='biz-day-'+i;cb.checked=biz.closedDays.indexOf(i)>=0;
+    cb.onchange=saveBizFromInputs;
+    lb.appendChild(cb);lb.appendChild(document.createTextNode(n));
+    box.appendChild(lb);
+  });
+  document.getElementById('biz-wd-open').value=biz.wd.open;
+  document.getElementById('biz-wd-close').value=biz.wd.close;
+  document.getElementById('biz-we-open').value=biz.we.open;
+  document.getElementById('biz-we-close').value=biz.we.close;
+  var list=document.getElementById('biz-closure-list');
+  list.innerHTML='';
+  if(!biz.closures.length){
+    var none=document.createElement('div');none.className='sdesc';none.textContent='登録されている臨時休業日はありません';list.appendChild(none);
+  }
+  biz.closures.forEach(function(c,i){
+    var row=document.createElement('div');row.className='biz-cl-item';
+    var d=document.createElement('span');d.className='d';
+    d.textContent=c.from+((c.to&&c.to!==c.from)?' ～ '+c.to:'');
+    var note=document.createElement('span');note.textContent=c.note||'';
+    var del=document.createElement('button');del.type='button';del.className='btn btn-d';del.textContent='削除';
+    del.onclick=function(){removeClosure(i);};
+    row.appendChild(d);row.appendChild(note);row.appendChild(del);
+    list.appendChild(row);
+  });
+}
+function saveBizFromInputs(){
+  var biz=getBiz();
+  biz.closedDays=[];
+  for(var i=0;i<7;i++){var cb=document.getElementById('biz-day-'+i);if(cb&&cb.checked)biz.closedDays.push(i);}
+  biz.wd={open:document.getElementById('biz-wd-open').value,close:document.getElementById('biz-wd-close').value};
+  biz.we={open:document.getElementById('biz-we-open').value,close:document.getElementById('biz-we-close').value};
+  saveBiz(biz);liveDueCheck();
+}
+function addClosure(){
+  var from=document.getElementById('biz-cl-from').value,to=document.getElementById('biz-cl-to').value,note=document.getElementById('biz-cl-note').value.trim();
+  if(!from){showToast('開始日を入力してください',true);return;}
+  if(to&&to<from){showToast('終了日は開始日以降にしてください',true);return;}
+  var biz=getBiz();
+  biz.closures.push({from:from,to:(to&&to!==from)?to:'',note:note});
+  biz.closures.sort(function(a,b){return a.from<b.from?-1:a.from>b.from?1:0;});
+  saveBiz(biz);
+  document.getElementById('biz-cl-from').value='';document.getElementById('biz-cl-to').value='';document.getElementById('biz-cl-note').value='';
+  renderBizSettings();liveDueCheck();showToast('臨時休業日を追加しました');
+}
+function removeClosure(i){
+  var biz=getBiz();biz.closures.splice(i,1);saveBiz(biz);renderBizSettings();liveDueCheck();
 }
 function toLocalDate(d){function p(n){return String(n).padStart(2,'0');}return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
 function getDueValue(){
@@ -995,9 +1153,10 @@ function submitForm(e){
   var dueHourVal=dueHour?dueHour.value:'';
   var dueMinVal=dueMin?dueMin.value:'';
   var dueTimeOk=dueHourVal==='未定'||(dueHourVal&&dueMinVal);
-  if(!dueDateVal||!dueTimeOk){
+  var dueBizMsg=(dueDateVal&&dueTimeOk)?checkDueBusiness(dueDateVal,dueHourVal,dueMinVal):'';
+  if(!dueDateVal||!dueTimeOk||dueBizMsg){
     if(dueDate)dueDate.classList.add('ferr');
-    if(dueEm)dueEm.classList.add('show');
+    if(dueEm){dueEm.textContent=dueBizMsg||'仕上がり予定日時を入力してください';dueEm.classList.add('show');}
     valid=false;
   } else {
     if(dueDate)dueDate.classList.remove('ferr');
@@ -1091,7 +1250,7 @@ function buildReceiptHTML(order, isTicket){
         '<hr style="border:none;border-top:1px dashed #000;margin:0.8mm 0">' +
         '<div style="font-size:10px;font-weight:bold;margin-bottom:0.3mm">営業日時</div>' +
         '<div style="font-size:10px;line-height:1.6">' +
-          '平日 12:00-20:00　土日祝 10:00-18:00<br>定休日　火曜日・金曜日' +
+          bizReceiptText() +
         '</div>' +
       '</div>';
   } else {
@@ -1131,14 +1290,14 @@ function buildReceiptHTML(order, isTicket){
 }
 
 
-var GAS_CODE = "// ガット張り受付システム - Google Apps Script\nconst SHEET_PENDING=\"作業未\",SHEET_DONE=\"作業完了\",SHEET_DELIVERED=\"お渡し済み\";\nconst HEADERS=[\"ID\",\"ラケット番号\",\"受付日時\",\"仕上がり予定\",\"作業状況\",\"お渡し状況\",\"お客様名\",\"ラケット名\",\"ラケット区分\",\"ガット種類\",\"ガットカラー\",\"ガット区分\",\"テンション\",\"ケース\",\"グリップテープ\",\"グロメット\",\"ステンシル\",\"折れ変形\",\"ラケット備考\",\"会計状況\"];\nconst COL_ID=1,COL_RACKETNO=2,COL_WORK=5,COL_DELIVERY=6,COL_DUE=4,NUM_COLS=HEADERS.length;\nconst COLOR_TODAY={bg:\"#FFFFFF\",font:\"#1a1a1a\"},COLOR_TOMORROW={bg:\"#B5D4F4\",font:\"#042C53\"},COLOR_DAY2={bg:\"#FAC775\",font:\"#412402\"},COLOR_DAY3PLUS={bg:\"#C0DD97\",font:\"#173404\"},COLOR_OVERDUE={bg:\"#F7C1C1\",font:\"#501313\"},COLOR_NODATE={bg:\"#D3D1C7\",font:\"#2C2C2A\"};\n\nfunction normalizeID(v){\n  if(v===null||v===undefined||v===\"\")return\"\";\n  if(typeof v===\"number\")return String(Math.round(v));\n  return String(v).trim();\n}\nfunction getDayDiff(d){if(!d)return null;var now=new Date(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate()),due=new Date(d),dueDay=new Date(due.getFullYear(),due.getMonth(),due.getDate());return Math.round((dueDay-today)/86400000);}\nfunction getRowColor(d){var diff=getDayDiff(d);if(diff===null)return COLOR_NODATE;if(diff\u003c0)return COLOR_OVERDUE;if(diff===0)return COLOR_TODAY;if(diff===1)return COLOR_TOMORROW;if(diff===2)return COLOR_DAY2;return COLOR_DAY3PLUS;}\nfunction applyRowColor(sheet,r,d){try{var last=sheet.getLastRow();if(r\u003c2||r\u003elast)return;var c=getRowColor(d);sheet.getRange(r,1,1,NUM_COLS).setBackground(c.bg).setFontColor(c.font);}catch(e){}}\n// 1行ずつAPI呼び出しすると行数が増えるほど遅くなり、onEditのロック待ち・実行時間制限に\n// 引っかかって「ステータス変更が反映されない」原因になるため、読み取り1回・書き込み2回の一括処理にする\nfunction recolorAllRows(sheet){\n  try{\n    var last=sheet.getLastRow();\n    if(last\u003c2)return;\n    var n=last-1;\n    var dueVals=sheet.getRange(2,COL_DUE,n,1).getValues();\n    var bgRows=[],fontRows=[];\n    for(var i=0;i\u003cn;i++){\n      var d=dueVals[i][0];\n      var c=getRowColor(d?String(d):null);\n      var bgRow=[],fontRow=[];\n      for(var col=0;col\u003cNUM_COLS;col++){bgRow.push(c.bg);fontRow.push(c.font);}\n      bgRows.push(bgRow);fontRows.push(fontRow);\n    }\n    var range=sheet.getRange(2,1,n,NUM_COLS);\n    range.setBackgrounds(bgRows);\n    range.setFontColors(fontRows);\n  }catch(e){}\n}\nfunction sortPendingSheet(sheet){var last=sheet.getLastRow();if(last\u003c=2)return;sheet.getRange(2,1,last-1,NUM_COLS).sort([{column:COL_DUE,ascending:true}]);}\n// 作業完了シート：仕上がり予定日時の昇順、同じ注文ID（同じ注文の複数ラケット）はまとまるように並べる\nfunction sortDoneSheet(sheet){var last=sheet.getLastRow();if(last\u003c=2)return;sheet.getRange(2,1,last-1,NUM_COLS).sort([{column:COL_DUE,ascending:true},{column:COL_ID,ascending:true},{column:COL_RACKETNO,ascending:true}]);}\nfunction initSheet(sheet){if(sheet.getLastRow()===0){sheet.appendRow(HEADERS);sheet.getRange(1,1,1,NUM_COLS).setFontWeight(\"bold\").setBackground(\"#1a3a2a\").setFontColor(\"#ffffff\");sheet.setFrozenRows(1);}}\nfunction getOrCreateSheet(ss,name){var s=ss.getSheetByName(name);if(!s){s=ss.insertSheet(name);initSheet(s);}return s;}\nfunction setColValidation(sheet,sheetName){\n  if(sheetName===SHEET_PENDING||sheetName===SHEET_DONE){\n    sheet.getRange(2,COL_WORK,sheet.getMaxRows()-1,1).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList([\"作業未\",\"作業完了\"],true).build());\n  }\n  if(sheetName===SHEET_DONE){\n    sheet.getRange(2,COL_DELIVERY,sheet.getMaxRows()-1,1).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList([\"お渡し未\",\"お渡し済み\"],true).build());\n  }\n}\n\n// 作業状況（作業未⇔作業完了）はラケット単位で独立処理し、同じ注文の他のラケットが巻き込まれないようにする。\n// お渡し状況（作業完了→お渡し済み）は注文（ID）単位で処理し、1本でも「お渡し済み」にすれば同じ注文の全ラケットをまとめて移動する。\nfunction onEdit(e){\n  if(!e||!e.range)return;\n  var sheet=e.range.getSheet();\n  var sn=sheet.getName();\n  if(sn!==SHEET_PENDING\u0026\u0026sn!==SHEET_DONE)return;\n\n  var startRow=e.range.getRow();\n  var startCol=e.range.getColumn();\n  var numRows=e.range.getNumRows();\n  var numCols=e.range.getNumColumns();\n  var endCol=startCol+numCols-1;\n  if(endCol\u003cCOL_WORK||startCol\u003eCOL_DELIVERY)return; // 作業状況・お渡し状況の列を含まない編集は無視\n\n  var firstEditRow=Math.max(startRow,2);\n  var lastEditRow=Math.min(startRow+numRows-1,sheet.getLastRow());\n  if(firstEditRow\u003elastEditRow)return; // ヘッダー行のみの編集\n\n  var lock=LockService.getScriptLock();\n  try{\n    lock.waitLock(15000);\n  }catch(err){\n    return; // ロック取得に失敗した場合はやむを得ず諦める（通常の単独操作では発生しない）\n  }\n  try{\n    var ss=e.source;\n    // 行削除による番号ズレの影響を受けないよう、編集範囲の内容を先に読み取っておく\n    var snapshot=sheet.getRange(firstEditRow,1,lastEditRow-firstEditRow+1,NUM_COLS).getValues();\n\n    var deliverIds={};     // 作業完了→お渡し済みへ、注文IDごとにまとめて移動\n    var completeKeys=[];   // 作業未→作業完了へ、ラケット単位で移動\n    var revertKeys=[];     // 作業完了→作業未へ、ラケット単位で移動\n\n    snapshot.forEach(function(rowData){\n      var tid=normalizeID(rowData[COL_ID-1]);\n      if(!tid)return;\n      var racketNo=String(rowData[COL_RACKETNO-1]).trim();\n      var workVal=rowData[COL_WORK-1];\n      var delivVal=rowData[COL_DELIVERY-1];\n      if(sn===SHEET_PENDING\u0026\u0026workVal===\"作業完了\"){\n        completeKeys.push({id:tid,racketNo:racketNo});\n      }else if(sn===SHEET_DONE\u0026\u0026delivVal===\"お渡し済み\"){\n        deliverIds[tid]=true;\n      }else if(sn===SHEET_DONE\u0026\u0026workVal===\"作業未\"){\n        revertKeys.push({id:tid,racketNo:racketNo});\n      }\n    });\n\n    var pendingNeedsSort=false,doneNeedsSort=false;\n\n    // 1) 作業完了 → お渡し済み（同じ注文IDの全ラケットをまとめて移動）\n    Object.keys(deliverIds).forEach(function(tid){\n      moveIdToDelivered(ss,sheet,tid);\n    });\n\n    // 2) 作業未 → 作業完了（ラケット単位）\n    completeKeys.forEach(function(k){\n      var destSheet=getOrCreateSheet(ss,SHEET_DONE);\n      if(moveSingleRacket(sheet,destSheet,SHEET_DONE,k.id,k.racketNo,\"作業完了\",null))doneNeedsSort=true;\n    });\n\n    // 3) 作業完了 → 作業未（ラケット単位。お渡し状況も「お渡し未」に戻す）\n    revertKeys.forEach(function(k){\n      var destSheet=getOrCreateSheet(ss,SHEET_PENDING);\n      if(moveSingleRacket(sheet,destSheet,SHEET_PENDING,k.id,k.racketNo,\"作業未\",\"お渡し未\"))pendingNeedsSort=true;\n    });\n\n    if(pendingNeedsSort){\n      var p=ss.getSheetByName(SHEET_PENDING);\n      if(p){sortPendingSheet(p);recolorAllRows(p);}\n    }\n    if(doneNeedsSort){\n      var dn=ss.getSheetByName(SHEET_DONE);\n      if(dn)sortDoneSheet(dn);\n    }\n  }finally{\n    lock.releaseLock();\n  }\n}\n\n// ID＋ラケット番号で対象行を特定し、1行だけを移動する（行番号のズレに影響されない）\nfunction moveSingleRacket(srcSheet,destSheet,destName,tid,racketNo,newWork,newDeliv){\n  var destLast=destSheet.getLastRow();\n  if(destLast\u003e=2){\n    var destData=destSheet.getRange(2,COL_ID,destLast-1,COL_RACKETNO).getValues();\n    for(var d=0;d\u003cdestData.length;d++){\n      if(normalizeID(destData[d][0])===tid\u0026\u0026String(destData[d][COL_RACKETNO-COL_ID]).trim()===racketNo)return false; // 既に移動先にある\n    }\n  }\n  var last=srcSheet.getLastRow();\n  if(last\u003c2)return false;\n  var all=srcSheet.getRange(2,1,last-1,NUM_COLS).getValues();\n  for(var i=0;i\u003call.length;i++){\n    if(normalizeID(all[i][COL_ID-1])===tid\u0026\u0026String(all[i][COL_RACKETNO-1]).trim()===racketNo){\n      var nd=all[i].slice();\n      if(newWork!==null)nd[COL_WORK-1]=newWork;\n      if(newDeliv!==null)nd[COL_DELIVERY-1]=newDeliv;\n      destSheet.appendRow(nd);\n      var nr=destSheet.getLastRow();\n      setColValidation(destSheet,destName);\n      if(destName===SHEET_PENDING)applyRowColor(destSheet,nr,nd[COL_DUE-1]?String(nd[COL_DUE-1]):null);\n      srcSheet.deleteRow(i+2);\n      return true;\n    }\n  }\n  return false;\n}\n\n// 同じ注文ID（tid）に属する作業完了シートの全ラケット行を、お渡し済みシートへまとめて移動する\nfunction moveIdToDelivered(ss,srcSheet,tid){\n  var destSheet=getOrCreateSheet(ss,SHEET_DELIVERED);\n\n  var destLast=destSheet.getLastRow();\n  var destKeys={};\n  if(destLast\u003e=2){\n    var destData=destSheet.getRange(2,COL_ID,destLast-1,COL_RACKETNO).getValues();\n    for(var d=0;d\u003cdestData.length;d++){\n      if(normalizeID(destData[d][0])===tid){\n        destKeys[String(destData[d][COL_RACKETNO-COL_ID]).trim()]=true;\n      }\n    }\n  }\n\n  var last=srcSheet.getLastRow();\n  if(last\u003c2)return;\n  var all=srcSheet.getRange(2,1,last-1,NUM_COLS).getValues();\n  var rowsToDelete=[];\n  for(var i=0;i\u003call.length;i++){\n    if(normalizeID(all[i][COL_ID-1])!==tid)continue;\n    rowsToDelete.push(i+2);\n    var racketNo=String(all[i][COL_RACKETNO-1]).trim();\n    if(destKeys[racketNo])continue; // 既に移動先にあるラケットは重複追加しない\n    var nd=all[i].slice();\n    nd[COL_DELIVERY-1]=\"お渡し済み\";\n    destSheet.appendRow(nd);\n  }\n  if(!rowsToDelete.length)return;\n\n  rowsToDelete.sort(function(a,b){return b-a;}); // 下から削除\n  rowsToDelete.forEach(function(r){srcSheet.deleteRow(r);});\n}\n\nfunction dailyRecolor(){try{var ss=SpreadsheetApp.getActiveSpreadsheet();var p=ss.getSheetByName(SHEET_PENDING);if(p\u0026\u0026p.getLastRow()\u003e=2)recolorAllRows(p);}catch(e){}}\n\nfunction doPost(e){\n  var data=JSON.parse(e.postData.contents);\n  var ss=SpreadsheetApp.getActiveSpreadsheet();\n  var ps=getOrCreateSheet(ss,SHEET_PENDING);\n  getOrCreateSheet(ss,SHEET_DONE);getOrCreateSheet(ss,SHEET_DELIVERED);\n  if(data.action===\"append\"\u0026\u0026data.rows.length){\n    // 1行ずつappendRowすると行数に比例して遅くなるため、一括書き込みにする\n    var startRow=ps.getLastRow()+1;\n    ps.getRange(startRow,1,data.rows.length,NUM_COLS).setValues(data.rows);\n    dedupSheet(ps); // 二重送信された場合に備え、ID＋ラケット番号が完全一致する重複行を除去\n    sortPendingSheet(ps);\n    recolorAllRows(ps);\n    setColValidation(ps,SHEET_PENDING);\n  }\n  return ContentService.createTextOutput(JSON.stringify({status:\"ok\"})).setMimeType(ContentService.MimeType.JSON);\n}\nfunction doGet(e){return ContentService.createTextOutput(JSON.stringify({status:\"ok\"})).setMimeType(ContentService.MimeType.JSON);}\n\nfunction onOpen(){\n  SpreadsheetApp.getUi().createMenu(\"受付システム\")\n    .addItem(\"選択行を印刷\",\"printSelectedRow\")\n    .addItem(\"全シートのプルダウン再設定\",\"resetAllValidations\")\n    .addItem(\"全シートの重複削除\",\"cleanupAllSheets\")\n    .addToUi();\n}\nfunction resetAllValidations(){\n  var ss=SpreadsheetApp.getActiveSpreadsheet();\n  [[SHEET_PENDING,ss.getSheetByName(SHEET_PENDING)],[SHEET_DONE,ss.getSheetByName(SHEET_DONE)]].forEach(function(a){if(a[1])setColValidation(a[1],a[0]);});\n  SpreadsheetApp.getUi().alert(\"プルダウンを再設定しました\");\n}\nfunction cleanupAllSheets(){\n  var ss=SpreadsheetApp.getActiveSpreadsheet();\n  [SHEET_PENDING,SHEET_DONE,SHEET_DELIVERED].forEach(function(name){var s=ss.getSheetByName(name);if(s)dedupSheet(s);});\n  SpreadsheetApp.getUi().alert(\"重複削除が完了しました\");\n}\nfunction dedupSheet(sheet){\n  try{var last=sheet.getLastRow();if(last\u003c2)return;var all=sheet.getRange(2,1,last-1,NUM_COLS).getValues();var seen={};var toDelete=[];for(var i=0;i\u003call.length;i++){var rid=normalizeID(all[i][COL_ID-1]);if(!rid)continue;var key=rid+\"__\"+String(all[i][1]).trim();if(seen[key]){toDelete.push(i+2);}else{seen[key]=true;}}for(var j=toDelete.length-1;j\u003e=0;j--){if(toDelete[j]\u003e1)sheet.deleteRow(toDelete[j]);}}catch(e){}\n}\nfunction printSelectedRow(){\n  var ss=SpreadsheetApp.getActiveSpreadsheet();var sheet=ss.getActiveSheet();var row=sheet.getActiveCell().getRow();\n  if(row\u003c=1){SpreadsheetApp.getUi().alert(\"データ行を選択してください\");return;}\n  var data=sheet.getRange(row,1,1,NUM_COLS).getValues()[0];var orderId=normalizeID(data[COL_ID-1]);\n  if(!orderId){SpreadsheetApp.getUi().alert(\"IDが見つかりません\");return;}\n  var rackets=[];\n  [SHEET_PENDING,SHEET_DONE,SHEET_DELIVERED].forEach(function(name){var s=ss.getSheetByName(name);if(!s)return;var last=s.getLastRow();if(last\u003c2)return;s.getRange(2,1,last-1,NUM_COLS).getValues().forEach(function(r){if(normalizeID(r[COL_ID-1])===orderId)rackets.push(r);});});\n  if(!rackets.length){SpreadsheetApp.getUi().alert(\"データが見つかりません\");return;}\n  rackets.sort(function(a,b){return Number(a[1])-Number(b[1]);});\n  var order={id:orderId,customer:rackets[0][6],tel:\"\",due:rackets[0][3],rackets:rackets.map(function(r){return{racket:r[7],racketType:r[8],gutType:r[9],gutColor:r[10],gutSource:r[11],tension:r[12],caseKeeping:r[13],gripTape:r[14],grommet:r[15],stencil:r[16],deform:r[17],note:r[18]};})};\n  SpreadsheetApp.getUi().showModalDialog(HtmlService.createHtmlOutput(buildPrintPageGAS(order)).setWidth(420).setHeight(620),\"印刷プレビュー\");\n}\nfunction buildPrintPageGAS(order){var due=fmtDueGAS(order.due);var id6=String(order.id).slice(-6);var rackets=order.rackets||[];var W=\"width:65mm;font-family:sans-serif;color:#000;padding:1.5mm 2mm;box-sizing:border-box\";return\"\u003c!DOCTYPE html\u003e\u003chtml\u003e\u003chead\u003e\u003cmeta charset=\u0027UTF-8\u0027\u003e\u003cstyle\u003e@page{margin:0;size:65mm auto}body{margin:0;background:#fff}.pg{page-break-after:always}.pg:last-child{page-break-after:auto}button{margin:8px auto;display:block;padding:8px 24px;font-size:14px;cursor:pointer;border:1px solid #333;border-radius:6px;background:#1a3a2a;color:#fff;font-family:sans-serif}@media print{button{display:none!important}}\u003c/style\u003e\u003c/head\u003e\u003cbody\u003e\u003cbutton onclick=\u0027window.print()\u0027\u003e印刷する\u003c/button\u003e\u003cdiv class=\u0027pg\u0027\u003e\"+buildCustomerCopyGAS(order,due,id6,W)+\"\u003c/div\u003e\u003cdiv class=\u0027pg\u0027\u003e\"+buildTicketGAS(order,due,id6,W,rackets)+\"\u003c/div\u003e\u003c/body\u003e\u003c/html\u003e\";}\nfunction fmtDueGAS(dt){if(!dt)return\"未設定\";var d=new Date(dt);var days=[\"日\",\"月\",\"火\",\"水\",\"木\",\"金\",\"土\"];var hh=String(d.getHours()).padStart(2,\"0\");var mm=String(d.getMinutes()).padStart(2,\"0\");return(d.getMonth()+1)+\"月\"+d.getDate()+\"日（\"+days[d.getDay()]+\"）\"+((d.getHours()===0\u0026\u0026d.getMinutes()===0)?\"時刻未定\":hh+\":\"+mm);}\nfunction buildCustomerCopyGAS(order,due,id6,W){var h=\"\u003cdiv style=\u0027\"+W+\"\u0027\u003e\u003cdiv style=\u0027font-size:12px;font-weight:bold;border:1px solid #000;padding:0.5mm 2mm;margin-bottom:0.8mm;display:flex;justify-content:space-between\u0027\u003e\u003cspan\u003e★ お客様控え\u003c/span\u003e\u003cspan style=\u0027font-size:9px;font-weight:normal\u0027\u003e#\"+id6+\"\u003c/span\u003e\u003c/div\u003e\u003cdiv style=\u0027font-size:14px;font-weight:bold;margin-bottom:0.3mm\u0027\u003e\"+order.customer+\" 様\u003c/div\u003e\u003chr style=\u0027border:none;border-top:1px dashed #000;margin:0.8mm 0\u0027\u003e\u003cdiv style=\u0027font-size:9px;margin-bottom:0.3mm\u0027\u003e仕上がり予定日時\u003c/div\u003e\u003cdiv style=\u0027font-size:15px;font-weight:bold;margin-bottom:0.8mm\u0027\u003e\"+due+\"\u003c/div\u003e\u003chr style=\u0027border:none;border-top:1px dashed #000;margin:0.8mm 0\u0027\u003e\u003cdiv style=\u0027font-size:10px;font-weight:bold;margin-bottom:0.3mm\u0027\u003e営業日時\u003c/div\u003e\u003cdiv style=\u0027font-size:10px;line-height:1.6\u0027\u003e平日 12:00-20:00　土日祝 10:00-18:00\u003cbr\u003e定休日　火曜日・金曜日\u003c/div\u003e\u003c/div\u003e\";return h;}\nfunction buildTicketGAS(order,due,id6,W,rackets){var h=\"\u003cdiv style=\u0027\"+W+\"\u0027\u003e\u003cdiv style=\u0027font-size:9px;font-weight:bold;border:1px solid #000;padding:0.3mm 1.5mm;margin-bottom:0.5mm;display:flex;justify-content:space-between\u0027\u003e\u003cspan\u003e【 伝 票 】\u003c/span\u003e\u003cspan style=\u0027font-size:8px;font-weight:normal\u0027\u003e#\"+id6+\"\u003c/span\u003e\u003c/div\u003e\u003cdiv style=\u0027font-size:14px;font-weight:bold;margin-bottom:0.2mm\u0027\u003e\"+order.customer+\" 様\u003c/div\u003e\u003chr style=\u0027border:none;border-top:1px dashed #000;margin:0.8mm 0\u0027\u003e\u003cdiv style=\u0027font-size:7px;margin-bottom:0.2mm\u0027\u003e仕上がり予定日時\u003c/div\u003e\u003cdiv style=\u0027font-size:11px;font-weight:bold;margin-bottom:0.5mm\u0027\u003e\"+due+\"\u003c/div\u003e\u003chr style=\u0027border:none;border-top:1px dashed #000;margin:0.4mm 0\u0027\u003e\";rackets.forEach(function(r,i){if(i\u003e0)h+=\"\u003chr style=\u0027border:none;border-top:1px dashed #000;margin:0.3mm 0\u0027\u003e\";h+=\"\u003cdiv style=\u0027font-size:8px;font-weight:bold;border-left:2px solid #000;padding-left:1mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis\u0027\u003e\"+(i+1)+\"/\"+rackets.length+\" \"+(r.racket||\"(no name)\")+\"\u003c/div\u003e\";var l2=[];if(r.gutType||r.gutColor)l2.push((r.gutType||\"\")+(r.gutColor?\"/\"+r.gutColor:\"\"));if(r.tension)l2.push(r.tension);if(r.gutSource)l2.push(\"(\"+r.gutSource+\")\");if(l2.length)h+=\"\u003cdiv style=\u0027font-size:7px;\u0027\u003e\"+l2.join(\" \")+\"\u003c/div\u003e\";var l3=[];if(r.gripTape)l3.push(\"Grip:\"+r.gripTape);if(r.grommet)l3.push(\"Grommet:\"+r.grommet);if(r.stencil)l3.push(\"Stencil:\"+r.stencil);if(l3.length)h+=\"\u003cdiv style=\u0027font-size:7px;\u0027\u003e\"+l3.join(\" / \")+\"\u003c/div\u003e\";if(r.note)h+=\"\u003cdiv style=\u0027font-size:7px;color:#333\u0027\u003e※\"+r.note+\"\u003c/div\u003e\";});h+=\"\u003c/div\u003e\";return h;}\n";
+var GAS_CODE = "// ガット張り受付システム - Google Apps Script\n// 店舗ごとの定休日表記（お客様控えの印刷用）。日暮里店は \"火曜日\" に変更して使用する\nconst CLOSED_DAYS_TEXT=\"火曜日・金曜日\";\nconst SHEET_PENDING=\"作業未\",SHEET_DONE=\"作業完了\",SHEET_DELIVERED=\"お渡し済み\";\nconst HEADERS=[\"ID\",\"ラケット番号\",\"受付日時\",\"仕上がり予定\",\"作業状況\",\"お渡し状況\",\"お客様名\",\"ラケット名\",\"ラケット区分\",\"ガット種類\",\"ガットカラー\",\"ガット区分\",\"テンション\",\"ケース\",\"グリップテープ\",\"グロメット\",\"ステンシル\",\"折れ変形\",\"ラケット備考\",\"会計状況\"];\nconst COL_ID=1,COL_RACKETNO=2,COL_WORK=5,COL_DELIVERY=6,COL_DUE=4,NUM_COLS=HEADERS.length;\nconst COLOR_TODAY={bg:\"#FFFFFF\",font:\"#1a1a1a\"},COLOR_TOMORROW={bg:\"#B5D4F4\",font:\"#042C53\"},COLOR_DAY2={bg:\"#FAC775\",font:\"#412402\"},COLOR_DAY3PLUS={bg:\"#C0DD97\",font:\"#173404\"},COLOR_OVERDUE={bg:\"#F7C1C1\",font:\"#501313\"},COLOR_NODATE={bg:\"#D3D1C7\",font:\"#2C2C2A\"};\n\nfunction normalizeID(v){\n  if(v===null||v===undefined||v===\"\")return\"\";\n  if(typeof v===\"number\")return String(Math.round(v));\n  return String(v).trim();\n}\nfunction getDayDiff(d){if(!d)return null;var now=new Date(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate()),due=new Date(d),dueDay=new Date(due.getFullYear(),due.getMonth(),due.getDate());return Math.round((dueDay-today)/86400000);}\nfunction getRowColor(d){var diff=getDayDiff(d);if(diff===null)return COLOR_NODATE;if(diff\u003c0)return COLOR_OVERDUE;if(diff===0)return COLOR_TODAY;if(diff===1)return COLOR_TOMORROW;if(diff===2)return COLOR_DAY2;return COLOR_DAY3PLUS;}\nfunction applyRowColor(sheet,r,d){try{var last=sheet.getLastRow();if(r\u003c2||r\u003elast)return;var c=getRowColor(d);sheet.getRange(r,1,1,NUM_COLS).setBackground(c.bg).setFontColor(c.font);}catch(e){}}\n// 1行ずつAPI呼び出しすると行数が増えるほど遅くなり、onEditのロック待ち・実行時間制限に\n// 引っかかって「ステータス変更が反映されない」原因になるため、読み取り1回・書き込み2回の一括処理にする\nfunction recolorAllRows(sheet){\n  try{\n    var last=sheet.getLastRow();\n    if(last\u003c2)return;\n    var n=last-1;\n    var dueVals=sheet.getRange(2,COL_DUE,n,1).getValues();\n    var bgRows=[],fontRows=[];\n    for(var i=0;i\u003cn;i++){\n      var d=dueVals[i][0];\n      var c=getRowColor(d?String(d):null);\n      var bgRow=[],fontRow=[];\n      for(var col=0;col\u003cNUM_COLS;col++){bgRow.push(c.bg);fontRow.push(c.font);}\n      bgRows.push(bgRow);fontRows.push(fontRow);\n    }\n    var range=sheet.getRange(2,1,n,NUM_COLS);\n    range.setBackgrounds(bgRows);\n    range.setFontColors(fontRows);\n  }catch(e){}\n}\nfunction sortPendingSheet(sheet){var last=sheet.getLastRow();if(last\u003c=2)return;sheet.getRange(2,1,last-1,NUM_COLS).sort([{column:COL_DUE,ascending:true}]);}\n// 作業完了シート：仕上がり予定日時の昇順、同じ注文ID（同じ注文の複数ラケット）はまとまるように並べる\nfunction sortDoneSheet(sheet){var last=sheet.getLastRow();if(last\u003c=2)return;sheet.getRange(2,1,last-1,NUM_COLS).sort([{column:COL_DUE,ascending:true},{column:COL_ID,ascending:true},{column:COL_RACKETNO,ascending:true}]);}\nfunction initSheet(sheet){if(sheet.getLastRow()===0){sheet.appendRow(HEADERS);sheet.getRange(1,1,1,NUM_COLS).setFontWeight(\"bold\").setBackground(\"#1a3a2a\").setFontColor(\"#ffffff\");sheet.setFrozenRows(1);}}\nfunction getOrCreateSheet(ss,name){var s=ss.getSheetByName(name);if(!s){s=ss.insertSheet(name);initSheet(s);}return s;}\nfunction setColValidation(sheet,sheetName){\n  if(sheetName===SHEET_PENDING||sheetName===SHEET_DONE){\n    sheet.getRange(2,COL_WORK,sheet.getMaxRows()-1,1).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList([\"作業未\",\"作業完了\"],true).build());\n  }\n  if(sheetName===SHEET_DONE){\n    sheet.getRange(2,COL_DELIVERY,sheet.getMaxRows()-1,1).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList([\"お渡し未\",\"お渡し済み\"],true).build());\n  }\n}\n\n// 作業状況（作業未⇔作業完了）はラケット単位で独立処理し、同じ注文の他のラケットが巻き込まれないようにする。\n// お渡し状況（作業完了→お渡し済み）は注文（ID）単位で処理し、1本でも「お渡し済み」にすれば同じ注文の全ラケットをまとめて移動する。\nfunction onEdit(e){\n  if(!e||!e.range)return;\n  var sheet=e.range.getSheet();\n  var sn=sheet.getName();\n  if(sn!==SHEET_PENDING\u0026\u0026sn!==SHEET_DONE)return;\n\n  var startRow=e.range.getRow();\n  var startCol=e.range.getColumn();\n  var numRows=e.range.getNumRows();\n  var numCols=e.range.getNumColumns();\n  var endCol=startCol+numCols-1;\n  if(endCol\u003cCOL_WORK||startCol\u003eCOL_DELIVERY)return; // 作業状況・お渡し状況の列を含まない編集は無視\n\n  var firstEditRow=Math.max(startRow,2);\n  var lastEditRow=Math.min(startRow+numRows-1,sheet.getLastRow());\n  if(firstEditRow\u003elastEditRow)return; // ヘッダー行のみの編集\n\n  var lock=LockService.getScriptLock();\n  try{\n    lock.waitLock(15000);\n  }catch(err){\n    return; // ロック取得に失敗した場合はやむを得ず諦める（通常の単独操作では発生しない）\n  }\n  try{\n    var ss=e.source;\n    // 行削除による番号ズレの影響を受けないよう、編集範囲の内容を先に読み取っておく\n    var snapshot=sheet.getRange(firstEditRow,1,lastEditRow-firstEditRow+1,NUM_COLS).getValues();\n\n    var deliverIds={};     // 作業完了→お渡し済みへ、注文IDごとにまとめて移動\n    var completeKeys=[];   // 作業未→作業完了へ、ラケット単位で移動\n    var revertKeys=[];     // 作業完了→作業未へ、ラケット単位で移動\n\n    snapshot.forEach(function(rowData){\n      var tid=normalizeID(rowData[COL_ID-1]);\n      if(!tid)return;\n      var racketNo=String(rowData[COL_RACKETNO-1]).trim();\n      var workVal=rowData[COL_WORK-1];\n      var delivVal=rowData[COL_DELIVERY-1];\n      if(sn===SHEET_PENDING\u0026\u0026workVal===\"作業完了\"){\n        completeKeys.push({id:tid,racketNo:racketNo});\n      }else if(sn===SHEET_DONE\u0026\u0026delivVal===\"お渡し済み\"){\n        deliverIds[tid]=true;\n      }else if(sn===SHEET_DONE\u0026\u0026workVal===\"作業未\"){\n        revertKeys.push({id:tid,racketNo:racketNo});\n      }\n    });\n\n    var pendingNeedsSort=false,doneNeedsSort=false;\n\n    // 1) 作業完了 → お渡し済み（同じ注文IDの全ラケットをまとめて移動）\n    Object.keys(deliverIds).forEach(function(tid){\n      moveIdToDelivered(ss,sheet,tid);\n    });\n\n    // 2) 作業未 → 作業完了（ラケット単位）\n    completeKeys.forEach(function(k){\n      var destSheet=getOrCreateSheet(ss,SHEET_DONE);\n      if(moveSingleRacket(sheet,destSheet,SHEET_DONE,k.id,k.racketNo,\"作業完了\",null))doneNeedsSort=true;\n    });\n\n    // 3) 作業完了 → 作業未（ラケット単位。お渡し状況も「お渡し未」に戻す）\n    revertKeys.forEach(function(k){\n      var destSheet=getOrCreateSheet(ss,SHEET_PENDING);\n      if(moveSingleRacket(sheet,destSheet,SHEET_PENDING,k.id,k.racketNo,\"作業未\",\"お渡し未\"))pendingNeedsSort=true;\n    });\n\n    if(pendingNeedsSort){\n      var p=ss.getSheetByName(SHEET_PENDING);\n      if(p){sortPendingSheet(p);recolorAllRows(p);}\n    }\n    if(doneNeedsSort){\n      var dn=ss.getSheetByName(SHEET_DONE);\n      if(dn)sortDoneSheet(dn);\n    }\n  }finally{\n    lock.releaseLock();\n  }\n}\n\n// ID＋ラケット番号で対象行を特定し、1行だけを移動する（行番号のズレに影響されない）\nfunction moveSingleRacket(srcSheet,destSheet,destName,tid,racketNo,newWork,newDeliv){\n  var destLast=destSheet.getLastRow();\n  if(destLast\u003e=2){\n    var destData=destSheet.getRange(2,COL_ID,destLast-1,COL_RACKETNO).getValues();\n    for(var d=0;d\u003cdestData.length;d++){\n      if(normalizeID(destData[d][0])===tid\u0026\u0026String(destData[d][COL_RACKETNO-COL_ID]).trim()===racketNo)return false; // 既に移動先にある\n    }\n  }\n  var last=srcSheet.getLastRow();\n  if(last\u003c2)return false;\n  var all=srcSheet.getRange(2,1,last-1,NUM_COLS).getValues();\n  for(var i=0;i\u003call.length;i++){\n    if(normalizeID(all[i][COL_ID-1])===tid\u0026\u0026String(all[i][COL_RACKETNO-1]).trim()===racketNo){\n      var nd=all[i].slice();\n      if(newWork!==null)nd[COL_WORK-1]=newWork;\n      if(newDeliv!==null)nd[COL_DELIVERY-1]=newDeliv;\n      destSheet.appendRow(nd);\n      var nr=destSheet.getLastRow();\n      setColValidation(destSheet,destName);\n      if(destName===SHEET_PENDING)applyRowColor(destSheet,nr,nd[COL_DUE-1]?String(nd[COL_DUE-1]):null);\n      srcSheet.deleteRow(i+2);\n      return true;\n    }\n  }\n  return false;\n}\n\n// 同じ注文ID（tid）に属する作業完了シートの全ラケット行を、お渡し済みシートへまとめて移動する\nfunction moveIdToDelivered(ss,srcSheet,tid){\n  var destSheet=getOrCreateSheet(ss,SHEET_DELIVERED);\n\n  var destLast=destSheet.getLastRow();\n  var destKeys={};\n  if(destLast\u003e=2){\n    var destData=destSheet.getRange(2,COL_ID,destLast-1,COL_RACKETNO).getValues();\n    for(var d=0;d\u003cdestData.length;d++){\n      if(normalizeID(destData[d][0])===tid){\n        destKeys[String(destData[d][COL_RACKETNO-COL_ID]).trim()]=true;\n      }\n    }\n  }\n\n  var last=srcSheet.getLastRow();\n  if(last\u003c2)return;\n  var all=srcSheet.getRange(2,1,last-1,NUM_COLS).getValues();\n  var rowsToDelete=[];\n  for(var i=0;i\u003call.length;i++){\n    if(normalizeID(all[i][COL_ID-1])!==tid)continue;\n    rowsToDelete.push(i+2);\n    var racketNo=String(all[i][COL_RACKETNO-1]).trim();\n    if(destKeys[racketNo])continue; // 既に移動先にあるラケットは重複追加しない\n    var nd=all[i].slice();\n    nd[COL_DELIVERY-1]=\"お渡し済み\";\n    destSheet.appendRow(nd);\n  }\n  if(!rowsToDelete.length)return;\n\n  rowsToDelete.sort(function(a,b){return b-a;}); // 下から削除\n  rowsToDelete.forEach(function(r){srcSheet.deleteRow(r);});\n}\n\nfunction dailyRecolor(){try{var ss=SpreadsheetApp.getActiveSpreadsheet();var p=ss.getSheetByName(SHEET_PENDING);if(p\u0026\u0026p.getLastRow()\u003e=2)recolorAllRows(p);}catch(e){}}\n\nfunction doPost(e){\n  var data=JSON.parse(e.postData.contents);\n  var ss=SpreadsheetApp.getActiveSpreadsheet();\n  var ps=getOrCreateSheet(ss,SHEET_PENDING);\n  getOrCreateSheet(ss,SHEET_DONE);getOrCreateSheet(ss,SHEET_DELIVERED);\n  if(data.action===\"append\"\u0026\u0026data.rows.length){\n    // 1行ずつappendRowすると行数に比例して遅くなるため、一括書き込みにする\n    var startRow=ps.getLastRow()+1;\n    ps.getRange(startRow,1,data.rows.length,NUM_COLS).setValues(data.rows);\n    dedupSheet(ps); // 二重送信された場合に備え、ID＋ラケット番号が完全一致する重複行を除去\n    sortPendingSheet(ps);\n    recolorAllRows(ps);\n    setColValidation(ps,SHEET_PENDING);\n  }\n  return ContentService.createTextOutput(JSON.stringify({status:\"ok\"})).setMimeType(ContentService.MimeType.JSON);\n}\nfunction doGet(e){return ContentService.createTextOutput(JSON.stringify({status:\"ok\"})).setMimeType(ContentService.MimeType.JSON);}\n\nfunction onOpen(){\n  SpreadsheetApp.getUi().createMenu(\"受付システム\")\n    .addItem(\"選択行を印刷\",\"printSelectedRow\")\n    .addItem(\"全シートのプルダウン再設定\",\"resetAllValidations\")\n    .addItem(\"全シートの重複削除\",\"cleanupAllSheets\")\n    .addToUi();\n}\nfunction resetAllValidations(){\n  var ss=SpreadsheetApp.getActiveSpreadsheet();\n  [[SHEET_PENDING,ss.getSheetByName(SHEET_PENDING)],[SHEET_DONE,ss.getSheetByName(SHEET_DONE)]].forEach(function(a){if(a[1])setColValidation(a[1],a[0]);});\n  SpreadsheetApp.getUi().alert(\"プルダウンを再設定しました\");\n}\nfunction cleanupAllSheets(){\n  var ss=SpreadsheetApp.getActiveSpreadsheet();\n  [SHEET_PENDING,SHEET_DONE,SHEET_DELIVERED].forEach(function(name){var s=ss.getSheetByName(name);if(s)dedupSheet(s);});\n  SpreadsheetApp.getUi().alert(\"重複削除が完了しました\");\n}\nfunction dedupSheet(sheet){\n  try{var last=sheet.getLastRow();if(last\u003c2)return;var all=sheet.getRange(2,1,last-1,NUM_COLS).getValues();var seen={};var toDelete=[];for(var i=0;i\u003call.length;i++){var rid=normalizeID(all[i][COL_ID-1]);if(!rid)continue;var key=rid+\"__\"+String(all[i][1]).trim();if(seen[key]){toDelete.push(i+2);}else{seen[key]=true;}}for(var j=toDelete.length-1;j\u003e=0;j--){if(toDelete[j]\u003e1)sheet.deleteRow(toDelete[j]);}}catch(e){}\n}\nfunction printSelectedRow(){\n  var ss=SpreadsheetApp.getActiveSpreadsheet();var sheet=ss.getActiveSheet();var row=sheet.getActiveCell().getRow();\n  if(row\u003c=1){SpreadsheetApp.getUi().alert(\"データ行を選択してください\");return;}\n  var data=sheet.getRange(row,1,1,NUM_COLS).getValues()[0];var orderId=normalizeID(data[COL_ID-1]);\n  if(!orderId){SpreadsheetApp.getUi().alert(\"IDが見つかりません\");return;}\n  var rackets=[];\n  [SHEET_PENDING,SHEET_DONE,SHEET_DELIVERED].forEach(function(name){var s=ss.getSheetByName(name);if(!s)return;var last=s.getLastRow();if(last\u003c2)return;s.getRange(2,1,last-1,NUM_COLS).getValues().forEach(function(r){if(normalizeID(r[COL_ID-1])===orderId)rackets.push(r);});});\n  if(!rackets.length){SpreadsheetApp.getUi().alert(\"データが見つかりません\");return;}\n  rackets.sort(function(a,b){return Number(a[1])-Number(b[1]);});\n  var order={id:orderId,customer:rackets[0][6],tel:\"\",due:rackets[0][3],rackets:rackets.map(function(r){return{racket:r[7],racketType:r[8],gutType:r[9],gutColor:r[10],gutSource:r[11],tension:r[12],caseKeeping:r[13],gripTape:r[14],grommet:r[15],stencil:r[16],deform:r[17],note:r[18]};})};\n  SpreadsheetApp.getUi().showModalDialog(HtmlService.createHtmlOutput(buildPrintPageGAS(order)).setWidth(420).setHeight(620),\"印刷プレビュー\");\n}\nfunction buildPrintPageGAS(order){var due=fmtDueGAS(order.due);var id6=String(order.id).slice(-6);var rackets=order.rackets||[];var W=\"width:65mm;font-family:sans-serif;color:#000;padding:1.5mm 2mm;box-sizing:border-box\";return\"\u003c!DOCTYPE html\u003e\u003chtml\u003e\u003chead\u003e\u003cmeta charset=\u0027UTF-8\u0027\u003e\u003cstyle\u003e@page{margin:0;size:65mm auto}body{margin:0;background:#fff}.pg{page-break-after:always}.pg:last-child{page-break-after:auto}button{margin:8px auto;display:block;padding:8px 24px;font-size:14px;cursor:pointer;border:1px solid #333;border-radius:6px;background:#1a3a2a;color:#fff;font-family:sans-serif}@media print{button{display:none!important}}\u003c/style\u003e\u003c/head\u003e\u003cbody\u003e\u003cbutton onclick=\u0027window.print()\u0027\u003e印刷する\u003c/button\u003e\u003cdiv class=\u0027pg\u0027\u003e\"+buildCustomerCopyGAS(order,due,id6,W)+\"\u003c/div\u003e\u003cdiv class=\u0027pg\u0027\u003e\"+buildTicketGAS(order,due,id6,W,rackets)+\"\u003c/div\u003e\u003c/body\u003e\u003c/html\u003e\";}\nfunction fmtDueGAS(dt){if(!dt)return\"未設定\";var d=new Date(dt);var days=[\"日\",\"月\",\"火\",\"水\",\"木\",\"金\",\"土\"];var hh=String(d.getHours()).padStart(2,\"0\");var mm=String(d.getMinutes()).padStart(2,\"0\");return(d.getMonth()+1)+\"月\"+d.getDate()+\"日（\"+days[d.getDay()]+\"）\"+((d.getHours()===0\u0026\u0026d.getMinutes()===0)?\"時刻未定\":hh+\":\"+mm);}\nfunction buildCustomerCopyGAS(order,due,id6,W){var h=\"\u003cdiv style=\u0027\"+W+\"\u0027\u003e\u003cdiv style=\u0027font-size:12px;font-weight:bold;border:1px solid #000;padding:0.5mm 2mm;margin-bottom:0.8mm;display:flex;justify-content:space-between\u0027\u003e\u003cspan\u003e★ お客様控え\u003c/span\u003e\u003cspan style=\u0027font-size:9px;font-weight:normal\u0027\u003e#\"+id6+\"\u003c/span\u003e\u003c/div\u003e\u003cdiv style=\u0027font-size:14px;font-weight:bold;margin-bottom:0.3mm\u0027\u003e\"+order.customer+\" 様\u003c/div\u003e\u003chr style=\u0027border:none;border-top:1px dashed #000;margin:0.8mm 0\u0027\u003e\u003cdiv style=\u0027font-size:9px;margin-bottom:0.3mm\u0027\u003e仕上がり予定日時\u003c/div\u003e\u003cdiv style=\u0027font-size:15px;font-weight:bold;margin-bottom:0.8mm\u0027\u003e\"+due+\"\u003c/div\u003e\u003chr style=\u0027border:none;border-top:1px dashed #000;margin:0.8mm 0\u0027\u003e\u003cdiv style=\u0027font-size:10px;font-weight:bold;margin-bottom:0.3mm\u0027\u003e営業日時\u003c/div\u003e\u003cdiv style=\u0027font-size:10px;line-height:1.6\u0027\u003e平日 12:00-20:00　土日祝 10:00-18:00\u003cbr\u003e定休日　\"+CLOSED_DAYS_TEXT+\"\u003c/div\u003e\u003c/div\u003e\";return h;}\nfunction buildTicketGAS(order,due,id6,W,rackets){var h=\"\u003cdiv style=\u0027\"+W+\"\u0027\u003e\u003cdiv style=\u0027font-size:9px;font-weight:bold;border:1px solid #000;padding:0.3mm 1.5mm;margin-bottom:0.5mm;display:flex;justify-content:space-between\u0027\u003e\u003cspan\u003e【 伝 票 】\u003c/span\u003e\u003cspan style=\u0027font-size:8px;font-weight:normal\u0027\u003e#\"+id6+\"\u003c/span\u003e\u003c/div\u003e\u003cdiv style=\u0027font-size:14px;font-weight:bold;margin-bottom:0.2mm\u0027\u003e\"+order.customer+\" 様\u003c/div\u003e\u003chr style=\u0027border:none;border-top:1px dashed #000;margin:0.8mm 0\u0027\u003e\u003cdiv style=\u0027font-size:7px;margin-bottom:0.2mm\u0027\u003e仕上がり予定日時\u003c/div\u003e\u003cdiv style=\u0027font-size:11px;font-weight:bold;margin-bottom:0.5mm\u0027\u003e\"+due+\"\u003c/div\u003e\u003chr style=\u0027border:none;border-top:1px dashed #000;margin:0.4mm 0\u0027\u003e\";rackets.forEach(function(r,i){if(i\u003e0)h+=\"\u003chr style=\u0027border:none;border-top:1px dashed #000;margin:0.3mm 0\u0027\u003e\";h+=\"\u003cdiv style=\u0027font-size:8px;font-weight:bold;border-left:2px solid #000;padding-left:1mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis\u0027\u003e\"+(i+1)+\"/\"+rackets.length+\" \"+(r.racket||\"(no name)\")+\"\u003c/div\u003e\";var l2=[];if(r.gutType||r.gutColor)l2.push((r.gutType||\"\")+(r.gutColor?\"/\"+r.gutColor:\"\"));if(r.tension)l2.push(r.tension);if(r.gutSource)l2.push(\"(\"+r.gutSource+\")\");if(l2.length)h+=\"\u003cdiv style=\u0027font-size:7px;\u0027\u003e\"+l2.join(\" \")+\"\u003c/div\u003e\";var l3=[];if(r.gripTape)l3.push(\"Grip:\"+r.gripTape);if(r.grommet)l3.push(\"Grommet:\"+r.grommet);if(r.stencil)l3.push(\"Stencil:\"+r.stencil);if(l3.length)h+=\"\u003cdiv style=\u0027font-size:7px;\u0027\u003e\"+l3.join(\" / \")+\"\u003c/div\u003e\";if(r.note)h+=\"\u003cdiv style=\u0027font-size:7px;color:#333\u0027\u003e※\"+r.note+\"\u003c/div\u003e\";});h+=\"\u003c/div\u003e\";return h;}\n";
 
 function getOrders(){try{return JSON.parse(localStorage.getItem(STORE_KEY)||'[]');}catch(e){return[];}}
 function saveOrders(o){localStorage.setItem(STORE_KEY,JSON.stringify(o));}
 function showTab(name,el){
   ['form','list','settings'].forEach(function(t){document.getElementById('tab-'+t).style.display=(t===name)?'':'none';});
   document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});el.classList.add('active');
-  if(name==='list'){autoDeleteOldTel();renderList();}if(name==='settings')loadSettings();
+  if(name==='list'){autoDeleteOldTel();renderList();}if(name==='settings'){loadSettings();renderBizSettings();}
 }
 function setFilter(f){currentFilter=f;['all','unpaid'].forEach(function(k){document.getElementById('filt-'+k).className='fb '+(k===f?'on':'off');});renderList();}
 function gutBadgeClass(s){if(s==='購入')return'g-shop';if(s==='キープロール')return'g-keep';if(s==='単張り持ち込み')return'g-single';return'g-roll';}
