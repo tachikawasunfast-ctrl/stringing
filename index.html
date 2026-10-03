@@ -1035,6 +1035,10 @@ function checkDueBusiness(dateStr,h,m){
   var p=dateStr.split('-'),y=+p[0],mo=+p[1],d=+p[2];
   var dow=new Date(y,mo-1,d).getDay();
   var label=mo+'月'+d+'日（'+DOW_NAMES[dow]+'）';
+  var now=new Date(),todayStr=toLocalDate(now);
+  if(dateStr<todayStr)return label+'は過ぎた日付です。今日以降を選んでください';
+  if(dateStr===todayStr&&h&&h!=='未定'&&m&&(+h)*60+(+m)<now.getHours()*60+now.getMinutes())
+    return label+' '+h+':'+m+' は過ぎた時刻です。現在時刻以降を選んでください';
   for(var i=0;i<biz.closures.length;i++){
     var c=biz.closures[i],to=c.to||c.from;
     if(dateStr>=c.from&&dateStr<=to)return label+'は臨時休業日です'+(c.note?'（'+c.note+'）':'');
